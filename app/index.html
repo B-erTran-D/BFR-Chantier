@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>BFR Chantier — suivi des installations et formations</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#332e72">
+<meta name="color-scheme" content="light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BFR Chantier">
+<meta name="description" content="Suivi des journées de chantier : installation, mise en service et formation. Point du soir en PDF envoyé aux responsables. Fonctionne hors connexion.">
+<meta name="robots" content="noindex, nofollow">
+<!-- Typographies officielles BFR Systems (hors connexion : repli sur les polices du système) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<style>/*<!--CSS-->*/</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="topbar">
+    <div class="topbar-gauche">
+      <div>
+        <div class="topbar-titre">BFR Chantier</div>
+        <div class="topbar-sous">Chargement…</div>
+      </div>
+    </div>
+  </header>
+  <main class="contenu"><div class="vide">Ouverture de l'application…</div></main>
+</div>
+
+<div id="toast"></div>
+
+<script>/*<!--MODELE-->*/</script>
+<script>/*<!--STORE-->*/</script>
+<script>/*<!--USAGE-->*/</script>
+<script>/*<!--PDF-->*/</script>
+<script>/*<!--ICONS-->*/</script>
+<script>/*<!--ANNOT-->*/</script>
+<script>/*<!--LOGO-->*/</script>
+<script>/*<!--UI-->*/</script>
+<script>/*<!--POINTSOIR-->*/</script>
+<script>/*<!--ECRANS-->*/</script>
+<script>/*<!--APP-->*/</script>
+<script>
+/* Service worker : application hors connexion (site publié uniquement) */
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () { });
+  });
+}
+</script>
+</body>
+</html>

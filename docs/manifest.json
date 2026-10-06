@@ -1,0 +1,33 @@
+{
+  "id": "bfr-chantier-v1",
+  "name": "BFR Chantier — suivi des installations et formations",
+  "short_name": "BFR Chantier",
+  "description": "Suivi des journées de chantier, point du soir envoyé aux responsables, sessions de formation. Fonctionne hors connexion.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#332e72",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
