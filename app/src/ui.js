@@ -421,6 +421,34 @@
     return h;
   }
 
+  /* Curseur et champ chiffré, liés. Le doigt donne la valeur d'un coup d'œil
+     (les 0 à 100 % se règlent au pouce, sans clavier) ; le champ chiffré reste
+     là pour la précision. Les deux portent data-lie l'un vers l'autre : bouger
+     l'un met l'autre à jour (voir surCurseur dans app.js).
+     L'identifiant fourni est celui du CHAMP CHIFFRÉ ; le curseur reçoit <id>R. */
+  function curseur(o) {
+    var o2 = o || {};
+    var id = o2.id || ('c' + Math.random().toString(36).slice(2, 8));
+    var min = o2.min === undefined ? 0 : o2.min;
+    var max = o2.max === undefined ? 100 : o2.max;
+    var pas = o2.pas === undefined ? 5 : o2.pas;
+    var v = Math.max(min, Math.min(max, Number(o2.valeur) || 0));
+    return '<div class="champ' + (o2.classe ? ' ' + o2.classe : '') + '">' +
+      (o2.libelle ? '<span class="champ-titre">' + esc(o2.libelle) +
+        (o2.indication ? '<span class="mini">' + esc(o2.indication) + '</span>' : '') + '</span>' : '') +
+      '<div class="curseur">' +
+        '<input type="range" id="' + id + 'R" class="curseur-piste" min="' + min + '" max="' + max +
+          '" step="' + pas + '" value="' + v + '" data-lie="' + id + '" style="--pct: ' +
+          Math.round(100 * (v - min) / Math.max(1, max - min)) + '%"' +
+          ' aria-label="' + attr(o2.libelle || 'Valeur') + '">' +
+        '<span class="curseur-champ"><input type="number" id="' + id + '" min="' + min + '" max="' + max +
+          '" value="' + v + '" data-lie="' + id + 'R" aria-label="' + attr((o2.libelle || 'Valeur') + ' — valeur exacte') + '">' +
+          '<span class="curseur-unite">' + esc(o2.unite || '%') + '</span></span>' +
+      '</div>' +
+      (o2.aide ? '<div class="mini">' + esc(o2.aide) + '</div>' : '') +
+      '</div>';
+  }
+
   global.UI = {
     $: $, $$: $$, esc: esc, attr: attr, toast: toast, vibrer: vibrer,
     feuille: feuille, confirmer: confirmer,
@@ -428,6 +456,6 @@
     signature: signature,
     lireFichier: lireFichier, compresser: compresser, prendrePhoto: prendrePhoto,
     telecharger: telecharger, partager: partager, copier: copier,
-    blocSaisie: blocSaisie, valeurCourante: valeurCourante, champListe: champListe
+    blocSaisie: blocSaisie, curseur: curseur, valeurCourante: valeurCourante, champListe: champListe
   };
 })(window);

@@ -439,10 +439,9 @@
       '<label class="champ"><span class="champ-titre">État</span><select id="taEtat">' +
       M.ETATS_TACHE.map(function (x) { return '<option value="' + x.id + '"' + (t.etat === x.id ? ' selected' : '') + '>' + U.esc(x.libelle) + '</option>'; }).join('') +
       '</select></label>' +
-      '<div class="duo">' +
-      U.blocSaisie({ id: 'taAvan', libelle: 'Avancement apporté (%)', valeur: t.avancement, type: 'number', min: 0, max: 100 }) +
+      /* le curseur demande de la largeur : pleine largeur, pas dans un duo */
+      U.curseur({ id: 'taAvan', libelle: 'Avancement apporté', indication: 'sur le jalon choisi', valeur: t.avancement, min: 0, max: 100, pas: 5 }) +
       U.blocSaisie({ id: 'taHeures', libelle: 'Heures passées', valeur: t.heures, type: 'number', min: 0, etape: 0.5 }) +
-      '</div>' +
       U.blocSaisie({ id: 'taMotif', libelle: 'Motif si non réalisée', valeur: t.motif });
 
     var boutons = [{ libelle: 'Annuler', classe: 's' }];
@@ -839,8 +838,7 @@
     U.feuille({
       titre: jal.libelle,
       contenu: U.blocSaisie({ id: 'jaLib', libelle: 'Libellé du jalon', valeur: jal.libelle }) +
-        '<div class="mini">Avancement de ce jalon (0 à 100 %)</div>' +
-        U.blocSaisie({ id: 'jaAvan', libelle: 'Avancement', valeur: jal.avancement, type: 'number', min: 0, max: 100 }) +
+        U.curseur({ id: 'jaAvan', libelle: 'Avancement', indication: 'glissez, ou tapez le chiffre', valeur: jal.avancement, min: 0, max: 100, pas: 5 }) +
         U.blocSaisie({ id: 'jaPoids', libelle: 'Poids dans l\'avancement global', valeur: jal.poids, type: 'number', min: 0 }) +
         '<div class="mini">Le poids relatif de tous les jalons doit rester cohérent : il pondère l\'avancement global du chantier.</div>' +
         (attachees ? '<div class="mini">' + attachees + ' tâche(s) de ce chantier sont rattachées à ce jalon.</div>' : ''),
@@ -1459,6 +1457,36 @@
     });
   }
 
+  /* Curseur et champ chiffré liés : on glisse, le chiffre suit ; on tape, le
+     curseur se cale. Aucun rendu n'est déclenché — la feuille ne bouge pas
+     pendant le glissement ; l'enregistrement lit le champ chiffré. */
+  /* remplissage de la piste : part parcourue en cyan (voir style.css) */
+  function peindreCurseur(piste) {
+    var min = Number(piste.getAttribute('min')) || 0;
+    var max = Number(piste.getAttribute('max'));
+    if (isNaN(max)) max = 100;
+    var v = Number(piste.value) || 0;
+    piste.style.setProperty('--pct', Math.round(100 * (v - min) / Math.max(1, max - min)) + '%');
+  }
+
+  function surCurseur(e) {
+    var el = e.target;
+    if (!el || !el.getAttribute) return;
+    var vers = el.getAttribute('data-lie');
+    if (!vers) return;
+    var autre = document.getElementById(vers);
+    if (!autre) return;
+    if (el.type === 'range') { autre.value = el.value; peindreCurseur(el); return; }
+    var v = Number(el.value);
+    if (el.value === '' || isNaN(v)) return;
+    var min = Number(el.getAttribute('min')), max = Number(el.getAttribute('max'));
+    if (!isNaN(min) && v < min) v = min;
+    if (!isNaN(max) && v > max) v = max;
+    autre.value = v;                        /* le curseur se cale au plus près */
+    peindreCurseur(autre);                  /* et sa piste se remplit d'autant */
+    if (e.type === 'change') el.value = v;  /* à la sortie du champ, on borne la valeur tapée */
+  }
+
   /* ============================== Évènements =========================== */
 
   function surClic(e) {
@@ -1647,6 +1675,8 @@
 
     document.addEventListener('click', surClic);
     document.addEventListener('input', surSaisie);
+    document.addEventListener('input', surCurseur);
+    document.addEventListener('change', surCurseur);
     document.addEventListener('change', surChangement);
 
     /* dictée : boutons micro générés par les blocs de saisie */

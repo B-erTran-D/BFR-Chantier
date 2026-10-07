@@ -314,6 +314,40 @@ button.carte, button.action-ligne, button.tache-ligne, button.jalon-ligne, butto
 
 .champ { display: block; margin-bottom: 11px; }
 .champ-titre { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 700; color: var(--bfr-secondary); margin-bottom: 6px; }
+
+/* Curseur de réglage (avancement 0 à 100 %) : piste cyan de la charte, pouce
+   natif pour rester familier sur iPhone comme sur Android. Le champ chiffré
+   qui l'accompagne garde le style commun des champs. */
+.curseur { display: flex; align-items: center; gap: 12px; }
+.curseur-piste { flex: 1; min-width: 0; height: 34px; margin: 0; background: transparent; accent-color: var(--bfr-primary); cursor: pointer; touch-action: pan-y; }
+/* un curseur n'est pas un champ : on lui rend son dessin natif (piste grise,
+   remplissage cyan, pouce) au lieu de la bordure et du fond blanc communs */
+.champ input[type="range"] {
+  border: 0; background: transparent; padding: 0; min-height: 0; box-shadow: none;
+  -webkit-appearance: none; appearance: none;
+}
+/* piste de 8 px : la partie parcourue en cyan, le reste en gris de la charte.
+   Le degré de remplissage est porté par --pct, mis à jour à chaque glissement. */
+.champ input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px; border-radius: 999px;
+  background: linear-gradient(90deg, var(--bfr-primary) 0 var(--pct, 0%), #e4e8f0 var(--pct, 0%) 100%);
+}
+.champ input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 26px; height: 26px; margin-top: -9px; border-radius: 50%;
+  background: #fff; border: 7px solid var(--bfr-primary);
+  box-shadow: 0 1px 3px rgba(31, 28, 69, .28);
+}
+.champ input[type="range"]::-moz-range-track { height: 8px; border-radius: 999px; background: #e4e8f0; }
+.champ input[type="range"]::-moz-range-progress { height: 8px; border-radius: 999px; background: var(--bfr-primary); }
+.champ input[type="range"]::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--bfr-primary); border: 7px solid #fff;
+  box-shadow: 0 1px 3px rgba(31, 28, 69, .28);
+}
+.curseur-champ { display: inline-flex; align-items: center; gap: 3px; flex: 0 0 auto; }
+.curseur-champ input { width: 66px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.curseur-unite { font-size: 13px; font-weight: 700; color: var(--bfr-muted); }
 .champ input, .champ textarea, .champ select {
   width: 100%; font: inherit; font-size: 15px; color: var(--bfr-text); background: #fff;
   border: 1px solid var(--bfr-border); border-radius: var(--rayon-s); padding: 12px 13px; min-height: 48px;

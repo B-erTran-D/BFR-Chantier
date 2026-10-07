@@ -30,6 +30,8 @@ Tout se fait dans le téléphone, **hors connexion**. Seul l'envoi du mail deman
 
 > Les **13 jalons** d'avancement (préparation atelier, montage, câblage, raccordements, paramétrage, essais, formation, réception…) sont créés automatiquement, avec leur poids. Vous pouvez ajuster l'avancement de chacun d'un simple appui, dans l'onglet **Synthèse**.
 >
+> **Régler un avancement est un geste, pas un calcul.** Dans la fiche d'un jalon (comme dans une tâche), l'avancement se règle au **curseur**, en glissant le doigt ; le chiffre exact s'écrit à côté si vous préférez, et les deux restent liés.
+>
 > **La liste des jalons est la vôtre.** Le bouton **Ajouter** de la carte Jalons crée un jalon propre à ce chantier (libellé + poids ; il démarre à 0 % et se place en fin de liste). Un appui sur un jalon permet de le **renommer**, d'ajuster son **avancement** et son **poids**, ou de le **supprimer**. Supprimer un jalon ne supprime aucune tâche : celles qui y étaient rattachées restent au journal, simplement détachées. L'avancement global se recalcule sur les jalons restants.
 
 ---
@@ -64,7 +66,7 @@ Sur l'accueil, touchez **Reprendre DÉMARRER LA JOURNÉE** : l'heure d'arrivée 
 | Ce que vous voulez noter | Où |
 |---|---|
 | Ce qui s'est passé (avec photo si besoin) | **Action** — assistant : activité → description (ou **dictée vocale « Dicter »**) → **photo annotée** → catégorie |
-| Ce qui était prévu / réalisé | **Tâches du jour** — cochez, mettez un **% d'avancement** sur le jalon concerné |
+| Ce qui était prévu / réalisé | **Tâches du jour** — cochez, réglez le **% d'avancement** au curseur (ou au chiffre) sur le jalon concerné |
 | Ce qui vous empêche d'avancer | **Blocage** — description, **gravité** (1 bloque l'équipe), **qui peut débloquer**, échéance, impact en jours |
 | Ce qui manque | **Matériel** — manquant / à prévoir / livré / retour atelier, avec la date de besoin |
 | La sécurité | **Sécurité** — bouton « aucun incident ce jour » (à renseigner avant la clôture), ou décrivez l'incident |

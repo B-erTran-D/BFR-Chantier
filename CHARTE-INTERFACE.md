@@ -83,6 +83,8 @@ d'alignement se refait en une commande (voir `outils/apercus.js` et la capture
 - **Barre d'action** en bas, translucide (`blur`), deux à trois boutons maximum.
 - **Onglets** soulignés d'un trait cyan, jamais de pastilles colorées.
 - État vide toujours expliqué : ce qu'il faut faire, pas seulement « aucun élément ».
+- **Réglage d'un pourcentage (avancement)** : un **curseur** doublé d'un **champ chiffré**, les deux liés — on glisse au pouce, ou on tape la valeur exacte. Le curseur occupe toute la largeur disponible (jamais dans une demi-colonne). La piste est grise (`#e4e8f0`, 8 px, arrondie), la **partie parcourue en cyan**, le pouce cyan à cœur blanc. Le pas est de 5 points ; une valeur tapée hors bornes est ramenée dans la plage.
+- **Jalons** : la liste des jalons d'un chantier se modifie (ajouter, renommer, pondérer, supprimer). Supprimer un jalon ne supprime **jamais** de tâche : les tâches rattachées restent au journal, détachées.
 
 ## 7. Vérification
 

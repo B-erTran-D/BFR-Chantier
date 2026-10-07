@@ -776,6 +776,41 @@ function fermerFeuilles() {
   const fermerJ = derniereFeuille() && derniereFeuille().querySelector('[data-fb="fermer"]');
   if (fermerJ) { fermerJ.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); await attente(250); }
 
+  /* --- curseur d'avancement : glisser ou taper, au choix --- */
+  clic('[data-a="editer-jalon"][data-id="' + jalonNeuf.id + '"]');
+  await attente(200);
+  const pisteC = doc.querySelector('#jaAvanR');
+  const chiffreC = doc.querySelector('#jaAvan');
+  T('la feuille du jalon propose un curseur ET un champ chiffre', !!pisteC && !!chiffreC);
+  T('le curseur et le chiffre sont lies',
+    !!pisteC && !!chiffreC && pisteC.getAttribute('data-lie') === 'jaAvan' && chiffreC.getAttribute('data-lie') === 'jaAvanR');
+  T('la plage du curseur va de 0 a 100 avec un pas de 5',
+    !!pisteC && pisteC.getAttribute('min') === '0' && pisteC.getAttribute('max') === '100' && pisteC.getAttribute('step') === '5');
+  T('le curseur est accessible (nom annonce)', !!pisteC && !!pisteC.getAttribute('aria-label'));
+  /* glisser met le chiffre a jour, et remplit la piste au prorata */
+  pisteC.value = '70';
+  pisteC.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+  await attente(80);
+  T('glisser le curseur met le chiffre a jour', chiffreC.value === '70', chiffreC.value);
+  T('la piste se remplit au prorata du glissement',
+    (pisteC.getAttribute('style') || '').indexOf('70%') >= 0, pisteC.getAttribute('style'));
+  /* taper un chiffre met le curseur a jour */
+  ecrire('#jaAvan', '25');
+  await attente(80);
+  T('taper le chiffre met le curseur a jour', pisteC.value === '25', pisteC.value);
+  /* une valeur hors bornes est ramenee dans la plage */
+  ecrire('#jaAvan', '250');
+  await attente(80);
+  T('une valeur au-dela de 100 est ramenee a 100', chiffreC.value === '100' && pisteC.value === '100',
+    chiffreC.value + ' / ' + pisteC.value);
+  /* et l'enregistrement retient la valeur affichee */
+  ecrire('#jaAvan', '45');
+  let boutonsCurseur = boutonsFeuille();
+  boutonsCurseur[boutonsCurseur.length - 1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  await attente(350);
+  T('le curseur enregistre l\'avancement du jalon', jalonNeuf.avancement === 45, jalonNeuf.avancement);
+  T('l\'avancement global du chantier suit', Modele.avancementChantier(ch) > 0, Modele.avancementChantier(ch));
+
   /* --- renommer un jalon, et refuser un libellé vide --- */
   clic('[data-a="editer-jalon"][data-id="' + jalonNeuf.id + '"]');
   await attente(200);
@@ -846,6 +881,10 @@ function fermerFeuilles() {
     /\.onglets\s*\{[^}]*padding:\s*0 var\(--retrait\)/.test(feuilleCSS));
   T('feuilles contenues dans la colonne',
     /\.feuille\s*\{[^}]*max-width:\s*var\(--app-largeur\)/.test(feuilleCSS));
+  T('le curseur est dessine selon la charte (remplissage cyan sur piste claire)',
+    /\.champ input\[type="range"\]::-webkit-slider-runnable-track\s*\{[^}]*linear-gradient\(90deg, var\(--bfr-primary\)/.test(feuilleCSS));
+  T('le curseur ne reprend pas la bordure des champs',
+    /\.champ input\[type="range"\]\s*\{[^}]*border:\s*0/.test(feuilleCSS));
   T('marque dimensionnee par la charte (22 px, non deformee)',
     /\.topbar-marque\s*\{[^}]*height:\s*22px[^}]*object-fit:\s*contain/.test(feuilleCSS));
   T('sous-titre du bandeau non limite a une fraction de la largeur',
