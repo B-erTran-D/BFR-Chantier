@@ -148,9 +148,22 @@ function fermerFeuilles() {
   T('avancement initial 0 %', App.avancementDe(ch) === 0);
   T('écran fiche chantier', texteEcran().includes('Jalons'));
   const titreFiche = doc.querySelector('.topbar-titre');
-  T('fiche chantier : le bandeau garde le titre du chantier, pas le logo',
+  T('fiche chantier : le bandeau garde le titre du chantier, pas le logo complet',
     !doc.querySelector('.topbar-marque') && !!titreFiche && titreFiche.textContent.indexOf('Ligne 3') === 0,
     titreFiche ? titreFiche.textContent.slice(0, 30) : 'aucun titre');
+  /* la marque « BFR » seule rappelle l'éditeur sur les écrans de travail */
+  const signetFiche = doc.querySelector('.topbar-signet');
+  T('la marque BFR figure sur la fiche chantier',
+    !!signetFiche && /^data:image\/png;base64,/.test(signetFiche.getAttribute('src')));
+  T('la marque courte est bien une autre image que le logo complet',
+    !!signetFiche && signetFiche.getAttribute('src') === dom.window.MARQUE_BFR_SIGNET &&
+    dom.window.MARQUE_BFR_SIGNET !== dom.window.MARQUE_BFR_TOPBAR);
+  /* et elle est présente sur les autres écrans de travail */
+  App.aller('reglages');
+  await attente(250);
+  T('la marque BFR figure sur les réglages', !!doc.querySelector('.topbar-signet'));
+  App.aller('fiche', { chantierId: ch.id, onglet: 'synthese' });
+  await attente(250);
 
   /* --- 3. démarrage de la journée --- */
   clic('[data-a="demarrer-journee"]');
@@ -163,6 +176,16 @@ function fermerFeuilles() {
   T('chantier passé en cours', App.chantier(ch.id).statut === 'EN_COURS');
   T('écran de la journée', texteEcran().includes('Effectif'));
   T('l\'effectif est repris du chantier (3)', j.effectif.nb === 3, 'nb = ' + j.effectif.nb);
+
+  /* --- 3 ter. plus de crayon dans le bandeau de la journée --- */
+  T('la marque BFR figure sur la journée', !!doc.querySelector('.topbar-signet'));
+  T('le bandeau de la journée garde le titre de la journée',
+    !!doc.querySelector('.topbar-titre') && doc.querySelector('.topbar-titre').textContent.indexOf('J1') === 0,
+    (doc.querySelector('.topbar-titre') || {}).textContent);
+  T('le bandeau de la journée n a plus de crayon inutile', !doc.querySelector('[data-a="editer-journee"]'));
+  /* le code mort ne doit pas subsister dans la page construite : c'est ce
+     contrôle qui empêcherait la même erreur de revenir par un autre chemin */
+  T('plus aucune trace du crayon dans le code construit', html.indexOf('editer-journee') === -1);
 
   /* --- 3 bis. pause : le bouton change de libellé et d'icône --- */
   const boutonPause = () => doc.querySelector('[data-a="pause-journee"]');
@@ -910,6 +933,8 @@ function fermerFeuilles() {
     /\.champ input\[type="range"\]::-webkit-slider-runnable-track\s*\{[^}]*linear-gradient\(90deg, var\(--bfr-primary\)/.test(feuilleCSS));
   T('le curseur ne reprend pas la bordure des champs',
     /\.champ input\[type="range"\]\s*\{[^}]*border:\s*0/.test(feuilleCSS));
+  T('marque courte dimensionnee par la charte (18 px, non deformee)',
+    /\.topbar-signet\s*\{[^}]*height:\s*18px[^}]*width:\s*auto/.test(feuilleCSS));
   T('marque dimensionnee par la charte (22 px, non deformee)',
     /\.topbar-marque\s*\{[^}]*height:\s*22px[^}]*object-fit:\s*contain/.test(feuilleCSS));
   T('sous-titre du bandeau non limite a une fraction de la largeur',
@@ -918,6 +943,19 @@ function fermerFeuilles() {
     /@media \(max-width: 360px\) \{[^}]*\.topbar-marque\s*\{[^}]*height:\s*20px/.test(feuilleCSS));
   T('aucune largeur figee en pixels pour les barres',
     !/\.(topbar|barre-bas|onglets)\s*\{[^}]*max-width:\s*\d+px/.test(feuilleCSS));
+
+  /* --- 28. garde-fou : une action ne peut pas utiliser « el » sans le recevoir --- */
+  /* C'est le défaut qui a produit « Erreur : el is not defined » sur le crayon
+     du bandeau de la journée : une action déclarée « function () » alors que le
+     répartiteur lui passe l'élément touché. Contrôle statique sur le code
+     effectivement livré (la page construite), donc rien ne peut y échapper. */
+  const debutActions = html.indexOf('var actions = {');
+  const blocActions = debutActions < 0 ? '' : html.slice(debutActions, html.indexOf('\n  };', debutActions));
+  const actionsSuspectes = [...blocActions.matchAll(/'([^']+)':\s*function\s*\(([^)]*)\)([\s\S]*?)(?=\n\s*'[^']+':\s*function|\n\s*};)/g)]
+    .filter((m) => !/\bel\b/.test(m[2]) && /\bel\./.test(m[3]))
+    .map((m) => m[1]);
+  T('les actions trouvent bien le bloc de code', blocActions.length > 100, blocActions.length);
+  T('aucune action n utilise « el » sans le recevoir', actionsSuspectes.length === 0, actionsSuspectes.join(' | '));
 
   /* --- 28. aucune erreur d'exécution --- */
   T('aucune erreur d\'exécution', erreurs.length === 0, erreurs.slice(0, 3).join(' | '));

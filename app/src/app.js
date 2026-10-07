@@ -1062,7 +1062,6 @@
     },
 
     'ajuster-journee': function () { feuilleAjuster(journeeCourante()); },
-    'editer-journee': function () { feuilleAjuster(journee(el.getAttribute('data-id')) || journeeCourante()); },
 
     /* taches */
     'ajouter-tache': function () { feuilleTache(journeeCourante()); },

@@ -109,6 +109,9 @@ h1, h2, h3, h4 { font-family: var(--font-heading); margin: 0; letter-spacing: -.
   box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 1px 12px rgba(31, 28, 69, .18);
 }
 .topbar-gauche { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+/* rappel de marque « BFR » en tête des écrans de travail (logo complet sur
+   l'accueil) : discret, il ne prend pas la place du nom du chantier */
+.topbar-signet { display: block; height: 18px; width: auto; flex: 0 0 auto; opacity: .92; }
 .topbar-gauche > div { min-width: 0; /* permet le repli du sous-titre, sans deborder du bandeau */ }
 .topbar-titre { font-weight: 600; font-size: 16.5px; letter-spacing: -.015em; }
 /* Marque officielle BFR Systems (logo, variante fond foncé) : même encombrement
@@ -467,6 +470,7 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
   .topbar { padding-top: calc(13px + env(safe-area-inset-top)); padding-bottom: 13px; }
   .topbar-titre { font-size: 18px; }
   .topbar-marque { height: 24px; }
+  .topbar-signet { height: 20px; }
   .topbar-sous { font-size: 12.5px; }
   .iconbtn { min-width: 42px; min-height: 42px; border-radius: 13px; }
   .contenu { padding-top: 20px; padding-bottom: 28px; }

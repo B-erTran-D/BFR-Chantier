@@ -44,9 +44,19 @@
     return '<img class="topbar-marque" src="' + logo + '" alt="BFR Chantier" title="BFR Systems">';
   }
 
+  /* La marque « BFR » seule, rappel discret en tête des écrans de travail :
+     le logo complet n'y tiendrait pas sans rogner le nom du chantier.
+     Absente du fichier de dépannage incomplet : on n'affiche alors rien. */
+  function signet() {
+    var marque = global.MARQUE_BFR_SIGNET;
+    if (!marque) { return ''; }
+    return '<img class="topbar-signet" src="' + marque + '" alt="BFR Systems">';
+  }
+
   function entete(titre, sous, retour, actionDroite) {
     return '<header class="topbar">' +
       '<div class="topbar-gauche">' +
+        signet() +
         (retour ? '<button type="button" class="iconbtn" data-a="' + retour + '" aria-label="Retour">' + I('retour', 20) + '</button>' : '') +
         '<div>' + (titre ? '<div class="topbar-titre">' + U.esc(titre) + '</div>' : marque()) +
         (sous ? '<div class="topbar-sous">' + U.esc(sous) + '</div>' : '') + '</div>' +
@@ -489,8 +499,10 @@
     var enCours = j.statut !== 'CLOTUREE';
     var today = M.aujourdhui();
 
+    /* Pas de crayon ici : le bouton « Ajuster » du bandeau du chrono ouvre déjà
+       l'ajustement de la journée (arrivée, départ, effectif, date). */
     var html = entete('J' + j.numero + ' / ' + (ch.dureePrevueJours || '?'), U.esc((ch.numeroAffaire ? ch.numeroAffaire + ' · ' : '') + ch.libelle) + ' · ' + U.esc(M.texteDateCourt(j.date)),
-      'ouvrir-chantier-retour', '<button type="button" class="iconbtn" data-a="editer-journee" data-id="' + j.id + '" aria-label="Modifier la journée">' + I('crayon', 18) + '</button>');
+      'ouvrir-chantier-retour');
 
     html += '<main class="contenu">';
 

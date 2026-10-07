@@ -20,7 +20,16 @@ Aucune teinte orange, ambre ou violette ne subsiste dans l'application, ni à l'
 
 ## 2. Marque officielle BFR Systems
 
-Le **logo officiel** figure dans le bandeau du haut, sur l'écran d'accueil : il y remplace le titre texte « BFR Chantier ».
+Le **logo officiel** figure dans le bandeau du haut, sous **deux formes** :
+
+| Forme | Où | Hauteur |
+|---|---|---|
+| **Logo complet** « BFR SYSTEMS » | écran d'accueil, à la place du titre texte | 22 px (24 px au-delà de 620 px) |
+| **Marque « BFR »** seule | **tous les autres bandeaux** (chantier, journée, point du soir, réglages, nouveau chantier), avant la flèche de retour | 18 px (20 px au-delà de 620 px) |
+
+La marque complète ne tient pas sur les écrans de travail : à 22 px, elle mange la
+place du nom du chantier. D'où la marque courte, même source, recadrée avant le
+bloc « SYSTEMS ».
 
 - **Source** : `assets/logo-bfr-topbar.png` — fichier officiel repris **tel quel** du dépôt BFR-Report. C'est la variante « fond foncé » du logo (lettres blanches, bloc cyan `#06baf2`), prévue pour un fond bleu nuit ; la variante « fond clair » (lettres anthracite) ne s'emploie que sur fond blanc.
 - **Embarquée** dans l'application (`data:image/png;base64`) pour rester disponible **hors connexion** et dans le fichier unique de dépannage. Elle est produite par `outils/preparer-marque.py` → `app/src/marque-bfr.js` (recadrée, ×3, PNG-8 à 64 couleurs : 5 Ko).
@@ -84,6 +93,7 @@ d'alignement se refait en une commande (voir `outils/apercus.js` et la capture
 - **Onglets** soulignés d'un trait cyan, jamais de pastilles colorées.
 - **Chrono de la journée** : le bouton de pause dit toujours l'action à venir — **« Pause »** en activité (bouton discret), **« Reprendre »** pendant une pause (bouton d'action), avec l'icône correspondante. Une pause en cours se lit aussi dans la ligne du haut (« 08:00 → en pause depuis 11:48 ») et sur un filet cyan à gauche du bloc. **Le décompte ne court pas pendant la pause** ; un départ clôt toute pause restée ouverte.
 - État vide toujours expliqué : ce qu'il faut faire, pas seulement « aucun élément ».
+- **Une seule façon d'atteindre chaque écran.** Un raccourci qui ouvre la même feuille qu'un bouton visible est retiré : deux chemins pour un même geste font douter de ce qu'ils font. (Le crayon du bandeau de la journée a été retiré pour cette raison — « Ajuster » ouvre déjà la feuille d'ajustement.)
 - **Réglage d'un pourcentage (avancement)** : un **curseur** doublé d'un **champ chiffré**, les deux liés — on glisse au pouce, ou on tape la valeur exacte. Le curseur occupe toute la largeur disponible (jamais dans une demi-colonne). La piste est grise (`#e4e8f0`, 8 px, arrondie), la **partie parcourue en cyan**, le pouce cyan à cœur blanc. Le pas est de 5 points ; une valeur tapée hors bornes est ramenée dans la plage.
 - **Jalons** : la liste des jalons d'un chantier se modifie (ajouter, renommer, pondérer, supprimer). Supprimer un jalon ne supprime **jamais** de tâche : les tâches rattachées restent au journal, détachées.
 
