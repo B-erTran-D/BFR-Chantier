@@ -30,6 +30,55 @@ egal('texteHeures(450)', M.texteHeures(450), '7 h 30');
 egal('texteHeures(120)', M.texteHeures(120), '2 h 00');
 egal('texteHeuresDec(7.5)', M.texteHeuresDec(7.5), '7 h 30');
 
+/* -------------------------------------------------- jalons : ajouter, retirer */
+/* Un chantier d'essai dédié : on ne touche pas au chantier des autres tests. */
+const chJ = M.nouveauChantier({ libelle: "Chantier d'essai — jalons" });
+egal('le chantier d\'essai part de 13 jalons', chJ.jalons.length, 13);
+
+const jn = M.ajouterJalon(chJ, '  Formation des conducteurs  ', 4);
+egal('le jalon ajouté entre en fin de liste', chJ.jalons.length, 14);
+egal('son libellé est nettoyé', jn.libelle, 'Formation des conducteurs');
+egal('son poids est repris', jn.poids, 4);
+egal('il démarre à 0 %', jn.avancement, 0);
+egal('son identifiant est unique', chJ.jalons.filter((j) => j.id === jn.id).length, 1);
+egal('un libellé vide est refusé', M.ajouterJalon(chJ, '   ', 3), null);
+egal('le refus n\'ajoute rien', chJ.jalons.length, 14);
+egal('un poids absent vaut 0', M.ajouterJalon(chJ, 'Reprise des plans').poids, 0);
+egal('un jalon sans chantier est refusé', M.ajouterJalon(null, 'Jalon'), null);
+
+/* le poids du jalon ajouté entre dans l'avancement global (poids total 104) */
+M.appliquerAvancement(chJ, jn.id, 100);
+egal('avancement global pondéré avec le jalon ajouté', M.avancementChantier(chJ), 4);
+
+/* retrait : la tâche rattachée est détachée, jamais supprimée */
+const jr = M.creerJournee(chJ);
+jr.taches = [
+  { id: 't1', libelle: 'Pose des capteurs', jalonId: 'montage' },
+  { id: 't2', libelle: 'Formation', jalonId: jn.id },
+  { id: 't3', libelle: 'Divers', jalonId: '' }
+];
+egal('tâches rattachées à un jalon', M.tachesDuJalon([jr], jn.id), 1);
+egal('aucune tâche pour un jalon inconnu', M.tachesDuJalon([jr], 'inexistant'), 0);
+
+const retrait = M.retirerJalon(chJ, jn.id, [jr]);
+egal('le jalon est retiré de la liste', chJ.jalons.length, 14);
+egal('le jalon retiré est renvoyé', retrait.jalon.libelle, 'Formation des conducteurs');
+egal('le nombre de tâches détachées est annoncé', retrait.detachees, 1);
+egal('le nombre de jalons restants est annoncé', retrait.restants, 14);
+T('la tâche est conservée, détachée du jalon',
+  jr.taches.length === 3 && jr.taches[1].jalonId === '', JSON.stringify(jr.taches[1]));
+egal('le retrait ne touche pas les autres tâches', jr.taches[0].jalonId, 'montage');
+egal('avancement global recalculé sans ce jalon', M.avancementChantier(chJ), 0);
+egal('retirer un jalon inconnu ne fait rien', M.retirerJalon(chJ, 'inexistant', [jr]), null);
+egal('retirer deux fois le même jalon ne fait rien', M.retirerJalon(chJ, jn.id, [jr]), null);
+
+/* un chantier sans aucun jalon ne divise pas par zéro */
+const chSansJalon = M.nouveauChantier({ libelle: 'Sans jalons' });
+/* on retire sur une copie : retirerJalon modifie la liste parcourue */
+[...chSansJalon.jalons].forEach((j) => M.retirerJalon(chSansJalon, j.id, []));
+egal('tous les jalons peuvent être retirés', chSansJalon.jalons.length, 0);
+egal('un chantier sans jalon reste à 0 %', M.avancementChantier(chSansJalon), 0);
+
 /* ---------------------------------------------------------------- journée */
 const chantier = M.nouveauChantier({ numeroAffaire: '25-0142', libelle: 'Ligne 3', dureePrevueJours: 8, effectifPrevu: 3 });
 egal('13 jalons par défaut', chantier.jalons.length, 13);

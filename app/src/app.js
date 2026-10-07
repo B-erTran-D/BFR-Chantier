@@ -835,18 +835,76 @@
   function feuilleJalon(ch, jalonId) {
     var jal = M.parId(ch.jalons || [], jalonId);
     if (!jal) return;
+    var attachees = M.tachesDuJalon(journeesDe(ch.id), jal.id);
     U.feuille({
       titre: jal.libelle,
-      contenu: '<div class="mini">Avancement de ce jalon (0 à 100 %)</div>' +
+      contenu: U.blocSaisie({ id: 'jaLib', libelle: 'Libellé du jalon', valeur: jal.libelle }) +
+        '<div class="mini">Avancement de ce jalon (0 à 100 %)</div>' +
         U.blocSaisie({ id: 'jaAvan', libelle: 'Avancement', valeur: jal.avancement, type: 'number', min: 0, max: 100 }) +
         U.blocSaisie({ id: 'jaPoids', libelle: 'Poids dans l\'avancement global', valeur: jal.poids, type: 'number', min: 0 }) +
-        '<div class="mini">Le poids relatif de tous les jalons doit rester cohérent : il pondère l\'avancement global du chantier.</div>',
+        '<div class="mini">Le poids relatif de tous les jalons doit rester cohérent : il pondère l\'avancement global du chantier.</div>' +
+        (attachees ? '<div class="mini">' + attachees + ' tâche(s) de ce chantier sont rattachées à ce jalon.</div>' : ''),
       boutons: [{ libelle: 'Annuler', classe: 's' }, {
+        libelle: 'Supprimer', classe: 's danger', action: function (ov, fermer) {
+          fermer(); confirmerSuppressionJalon(ch, jal);
+        }
+      }, {
         libelle: 'Enregistrer', classe: 'p', action: function (ov, fermer) {
+          var lib = (document.getElementById('jaLib').value || '').trim();
+          if (!lib) { U.toast('Donnez un nom au jalon'); return; }
+          jal.libelle = lib;
           jal.avancement = Math.max(0, Math.min(100, Number(document.getElementById('jaAvan').value) || 0));
           jal.poids = Math.max(0, Number(document.getElementById('jaPoids').value) || 0);
           fermer(); sauverChantier(ch); rendre();
           U.toast('Avancement du chantier : ' + M.avancementChantier(ch) + ' %', 'ok');
+        }
+      }]
+    });
+  }
+
+  /* Un jalon de plus : libellé et poids. Le jalon neuf démarre à 0 %. */
+  function feuilleNouveauJalon(ch) {
+    if (!ch) return;
+    U.feuille({
+      titre: 'Ajouter un jalon',
+      contenu: U.blocSaisie({ id: 'njLib', libelle: 'Libellé du jalon', valeur: '', placeholder: 'Ex. : Formation des conducteurs de ligne' }) +
+        U.blocSaisie({ id: 'njPoids', libelle: 'Poids dans l\'avancement global', valeur: 5, type: 'number', min: 0 }) +
+        '<div class="mini">Le poids dit la part de ce jalon dans l\'avancement global. Le total n\'a pas besoin de faire 100 : il est recalculé sur l\'ensemble des jalons. Un jalon neuf démarre à 0 %. Il se place en fin de liste.</div>',
+      boutons: [{ libelle: 'Annuler', classe: 's' }, {
+        libelle: 'Ajouter', classe: 'p', action: function (ov, fermer) {
+          var lib = (document.getElementById('njLib').value || '').trim();
+          var poids = Number(document.getElementById('njPoids').value) || 0;
+          var j = M.ajouterJalon(ch, lib, poids);
+          if (!j) { U.toast('Donnez un nom au jalon'); return; }
+          fermer(); sauverChantier(ch); rendre();
+          U.toast('Jalon ajouté', 'ok');
+        }
+      }]
+    });
+  }
+
+  /* Suppression d'un jalon : on demande confirmation et on annonce ce qui
+     arrive aux tâches rattachées — elles restent au journal, détachées. */
+  function confirmerSuppressionJalon(ch, jal) {
+    var journees = journeesDe(ch.id);
+    var attachees = M.tachesDuJalon(journees, jal.id);
+    U.feuille({
+      titre: 'Supprimer ce jalon ?',
+      contenu: '<p class="texte">« ' + U.esc(jal.libelle) + ' » sera retiré des jalons du chantier.' +
+        (attachees ? ' ' + attachees + ' tâche(s) y étaient rattachées : elles restent au journal, détachées de ce jalon.' : '') +
+        '</p><p class="mini">L\'avancement global est recalculé sur les jalons restants. Cette suppression ne touche ni les heures ni les comptes rendus.</p>',
+      boutons: [{ libelle: 'Annuler', classe: 's' }, {
+        libelle: 'Supprimer', classe: 's danger', action: function (ov, fermer) {
+          /* journées à réenregistrer : celles dont une tâche était rattachée */
+          var aSauver = journees.filter(function (j) {
+            return (j.taches || []).some(function (t) { return t.jalonId === jal.id; });
+          });
+          var r = M.retirerJalon(ch, jal.id, journees);
+          fermer();
+          if (!r) return;
+          aSauver.forEach(function (j) { sauverJournee(j); });
+          sauverChantier(ch); rendre();
+          U.toast('Jalon supprimé — avancement global : ' + M.avancementChantier(ch) + ' %', 'ok');
         }
       }]
     });
@@ -1217,7 +1275,7 @@
 
     /* jalons */
     'editer-jalon': function (el) { feuilleJalon(chantierCourant(), el.getAttribute('data-id')); },
-    'editer-jalons': function () { U.toast('Touchez un jalon pour ajuster son avancement et son poids'); },
+    'ajouter-jalon': function () { feuilleNouveauJalon(chantierCourant()); },
 
     /* clôture et point du soir */
     'cloturer-journee': function () {

@@ -29,6 +29,8 @@ Tout se fait dans le téléphone, **hors connexion**. Seul l'envoi du mail deman
 7. **Créer le chantier**.
 
 > Les **13 jalons** d'avancement (préparation atelier, montage, câblage, raccordements, paramétrage, essais, formation, réception…) sont créés automatiquement, avec leur poids. Vous pouvez ajuster l'avancement de chacun d'un simple appui, dans l'onglet **Synthèse**.
+>
+> **La liste des jalons est la vôtre.** Le bouton **Ajouter** de la carte Jalons crée un jalon propre à ce chantier (libellé + poids ; il démarre à 0 % et se place en fin de liste). Un appui sur un jalon permet de le **renommer**, d'ajuster son **avancement** et son **poids**, ou de le **supprimer**. Supprimer un jalon ne supprime aucune tâche : celles qui y étaient rattachées restent au journal, simplement détachées. L'avancement global se recalcule sur les jalons restants.
 
 ---
 
@@ -151,7 +153,7 @@ Les **documents de formation** — compte rendu de formation, feuille de présen
 
 | Onglet | Ce qu'on y trouve |
 |---|---|
-| **Synthèse** | **Phase des travaux en cours** avec le bouton *Passer à…*, avancement global (barre + %), **jalons** (touchez pour ajuster avancement et poids), **blocages ouverts** avec bouton *Lever*, prochaines étapes, dernière synthèse |
+| **Synthèse** | **Phase des travaux en cours** avec le bouton *Passer à…*, avancement global (barre + %), **jalons** (bouton *Ajouter* ; touchez un jalon pour le renommer, ajuster son avancement ou son poids, ou le supprimer), **blocages ouverts** avec bouton *Lever*, prochaines étapes, dernière synthèse |
 | **Journal** | Toutes les journées : date, effectif, heures, synthèse, blocages. Boutons *Continuer / Rouvrir* et *Point du soir* |
 | **Matériel** | Tout le matériel du chantier : manquants, livrés, à prévoir, retours atelier |
 | **Formation** | Les sessions, leurs participants et leurs documents |

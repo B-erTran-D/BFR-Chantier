@@ -971,6 +971,51 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
   }
 
   /* Applique des points d'avancement à un jalon (borné à 100) */
+  /* Un jalon de plus. Le poids dit sa part dans l'avancement global ; un jalon
+     neuf démarre à 0 %. Renvoie le jalon créé, ou null si le libellé est vide. */
+  function ajouterJalon(chantier, libelle, poids) {
+    if (!chantier) return null;
+    var texte = String(libelle === undefined || libelle === null ? '' : libelle).trim();
+    if (!texte) return null;
+    chantier.jalons = chantier.jalons || [];
+    var j = {
+      id: uid('jalon'),
+      libelle: texte,
+      poids: Math.max(0, Number(poids) || 0),
+      avancement: 0
+    };
+    chantier.jalons.push(j);
+    return j;
+  }
+
+  /* Combien de tâches sont rattachées à un jalon (dans les journées du chantier). */
+  function tachesDuJalon(journees, jalonId) {
+    var n = 0;
+    (journees || []).forEach(function (j) {
+      (j.taches || []).forEach(function (t) { if (t.jalonId === jalonId) n++; });
+    });
+    return n;
+  }
+
+  /* Retrait d'un jalon. Les tâches rattachées ne sont pas supprimées : elles
+     sont détachées du jalon — leurs heures et leur avancement restent au
+     journal. L'avancement global est recalculé sur les jalons restants.
+     Renvoie { jalon, detachees, restants }, ou null si le jalon est inconnu. */
+  function retirerJalon(chantier, jalonId, journees) {
+    var jalons = (chantier && chantier.jalons) || [];
+    var idx = -1;
+    jalons.forEach(function (j, k) { if (j.id === jalonId) idx = k; });
+    if (idx < 0) return null;
+    var parti = jalons.splice(idx, 1)[0];
+    var detachees = 0;
+    (journees || []).forEach(function (j) {
+      (j.taches || []).forEach(function (t) {
+        if (t.jalonId === jalonId) { t.jalonId = ''; detachees++; }
+      });
+    });
+    return { jalon: parti, detachees: detachees, restants: jalons.length };
+  }
+
   function appliquerAvancement(chantier, jalonId, points) {
     var j = parId(chantier.jalons || [], jalonId);
     if (!j) return null;
@@ -1360,6 +1405,7 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
     nouveauChantier: nouveauChantier, jalonsNeufs: jalonsNeufs,
     avancementChantier: avancementChantier, jalonsEnCours: jalonsEnCours,
     appliquerAvancement: appliquerAvancement,
+    ajouterJalon: ajouterJalon, retirerJalon: retirerJalon, tachesDuJalon: tachesDuJalon,
     /* journée */
     dureeJourneeMn: dureeJourneeMn, hommesHeures: hommesHeures,
     cumulHommesHeures: cumulHommesHeures, cumulMinutesSurSite: cumulMinutesSurSite,
@@ -4238,14 +4284,20 @@ window.MARQUE_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAA
       '<span>' + U.esc(M.texteHeuresDec(M.cumulHommesHeures(js))) + '</span></div>' +
       '</div>';
 
-    html += '<div class="carte"><h3 class="carte-titre">' + I('avancement', 16) + ' Jalons <button type="button" class="mini-btn" data-a="editer-jalons">Modifier</button></h3>';
-    (ch.jalons || []).forEach(function (j) {
+    /* Jalons : liste modifiable — on ajoute, on ajuste, on supprime. */
+    var jalons = ch.jalons || [];
+    html += '<div class="carte"><h3 class="carte-titre">' + I('avancement', 16) + ' Jalons <button type="button" class="mini-btn" data-a="ajouter-jalon">' + I('plus', 14) + 'Ajouter</button></h3>';
+    if (!jalons.length) {
+      html += '<p class="mini">Aucun jalon pour ce chantier. Tant qu\'il n\'y en a pas, l\'avancement global reste à 0 %.</p>';
+    }
+    jalons.forEach(function (j) {
       var a = Number(j.avancement) || 0;
       html += '<button type="button" class="jalon-ligne" data-a="editer-jalon" data-id="' + j.id + '">' +
         '<span class="jalon-ic">' + (a >= 100 ? I('valideCercle', 18) : (a > 0 ? I('demi', 18) : I('vide', 18))) + '</span>' +
         '<span class="jalon-lib">' + U.esc(j.libelle) + '</span>' +
         '<span class="jalon-pct">' + a + ' %</span></button>';
     });
+    html += '<div class="mini" style="margin-top:8px">Touchez un jalon pour ajuster son avancement ou son poids, ou pour le supprimer.</div>';
     html += '</div>';
 
     if (ouverts.length) {
@@ -5663,18 +5715,76 @@ window.MARQUE_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAA
   function feuilleJalon(ch, jalonId) {
     var jal = M.parId(ch.jalons || [], jalonId);
     if (!jal) return;
+    var attachees = M.tachesDuJalon(journeesDe(ch.id), jal.id);
     U.feuille({
       titre: jal.libelle,
-      contenu: '<div class="mini">Avancement de ce jalon (0 à 100 %)</div>' +
+      contenu: U.blocSaisie({ id: 'jaLib', libelle: 'Libellé du jalon', valeur: jal.libelle }) +
+        '<div class="mini">Avancement de ce jalon (0 à 100 %)</div>' +
         U.blocSaisie({ id: 'jaAvan', libelle: 'Avancement', valeur: jal.avancement, type: 'number', min: 0, max: 100 }) +
         U.blocSaisie({ id: 'jaPoids', libelle: 'Poids dans l\'avancement global', valeur: jal.poids, type: 'number', min: 0 }) +
-        '<div class="mini">Le poids relatif de tous les jalons doit rester cohérent : il pondère l\'avancement global du chantier.</div>',
+        '<div class="mini">Le poids relatif de tous les jalons doit rester cohérent : il pondère l\'avancement global du chantier.</div>' +
+        (attachees ? '<div class="mini">' + attachees + ' tâche(s) de ce chantier sont rattachées à ce jalon.</div>' : ''),
       boutons: [{ libelle: 'Annuler', classe: 's' }, {
+        libelle: 'Supprimer', classe: 's danger', action: function (ov, fermer) {
+          fermer(); confirmerSuppressionJalon(ch, jal);
+        }
+      }, {
         libelle: 'Enregistrer', classe: 'p', action: function (ov, fermer) {
+          var lib = (document.getElementById('jaLib').value || '').trim();
+          if (!lib) { U.toast('Donnez un nom au jalon'); return; }
+          jal.libelle = lib;
           jal.avancement = Math.max(0, Math.min(100, Number(document.getElementById('jaAvan').value) || 0));
           jal.poids = Math.max(0, Number(document.getElementById('jaPoids').value) || 0);
           fermer(); sauverChantier(ch); rendre();
           U.toast('Avancement du chantier : ' + M.avancementChantier(ch) + ' %', 'ok');
+        }
+      }]
+    });
+  }
+
+  /* Un jalon de plus : libellé et poids. Le jalon neuf démarre à 0 %. */
+  function feuilleNouveauJalon(ch) {
+    if (!ch) return;
+    U.feuille({
+      titre: 'Ajouter un jalon',
+      contenu: U.blocSaisie({ id: 'njLib', libelle: 'Libellé du jalon', valeur: '', placeholder: 'Ex. : Formation des conducteurs de ligne' }) +
+        U.blocSaisie({ id: 'njPoids', libelle: 'Poids dans l\'avancement global', valeur: 5, type: 'number', min: 0 }) +
+        '<div class="mini">Le poids dit la part de ce jalon dans l\'avancement global. Le total n\'a pas besoin de faire 100 : il est recalculé sur l\'ensemble des jalons. Un jalon neuf démarre à 0 %. Il se place en fin de liste.</div>',
+      boutons: [{ libelle: 'Annuler', classe: 's' }, {
+        libelle: 'Ajouter', classe: 'p', action: function (ov, fermer) {
+          var lib = (document.getElementById('njLib').value || '').trim();
+          var poids = Number(document.getElementById('njPoids').value) || 0;
+          var j = M.ajouterJalon(ch, lib, poids);
+          if (!j) { U.toast('Donnez un nom au jalon'); return; }
+          fermer(); sauverChantier(ch); rendre();
+          U.toast('Jalon ajouté', 'ok');
+        }
+      }]
+    });
+  }
+
+  /* Suppression d'un jalon : on demande confirmation et on annonce ce qui
+     arrive aux tâches rattachées — elles restent au journal, détachées. */
+  function confirmerSuppressionJalon(ch, jal) {
+    var journees = journeesDe(ch.id);
+    var attachees = M.tachesDuJalon(journees, jal.id);
+    U.feuille({
+      titre: 'Supprimer ce jalon ?',
+      contenu: '<p class="texte">« ' + U.esc(jal.libelle) + ' » sera retiré des jalons du chantier.' +
+        (attachees ? ' ' + attachees + ' tâche(s) y étaient rattachées : elles restent au journal, détachées de ce jalon.' : '') +
+        '</p><p class="mini">L\'avancement global est recalculé sur les jalons restants. Cette suppression ne touche ni les heures ni les comptes rendus.</p>',
+      boutons: [{ libelle: 'Annuler', classe: 's' }, {
+        libelle: 'Supprimer', classe: 's danger', action: function (ov, fermer) {
+          /* journées à réenregistrer : celles dont une tâche était rattachée */
+          var aSauver = journees.filter(function (j) {
+            return (j.taches || []).some(function (t) { return t.jalonId === jal.id; });
+          });
+          var r = M.retirerJalon(ch, jal.id, journees);
+          fermer();
+          if (!r) return;
+          aSauver.forEach(function (j) { sauverJournee(j); });
+          sauverChantier(ch); rendre();
+          U.toast('Jalon supprimé — avancement global : ' + M.avancementChantier(ch) + ' %', 'ok');
         }
       }]
     });
@@ -6045,7 +6155,7 @@ window.MARQUE_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAA
 
     /* jalons */
     'editer-jalon': function (el) { feuilleJalon(chantierCourant(), el.getAttribute('data-id')); },
-    'editer-jalons': function () { U.toast('Touchez un jalon pour ajuster son avancement et son poids'); },
+    'ajouter-jalon': function () { feuilleNouveauJalon(chantierCourant()); },
 
     /* clôture et point du soir */
     'cloturer-journee': function () {
@@ -6463,5 +6573,5 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   });
 }
 </script>
-<script>window.CHANTIER_VERSION="86676c2333";window.CHANTIER_DATE="07/10/2026";</script></body>
+<script>window.CHANTIER_VERSION="4244500421";window.CHANTIER_DATE="07/10/2026";</script></body>
 </html>

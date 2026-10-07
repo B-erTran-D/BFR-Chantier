@@ -468,6 +468,51 @@
   }
 
   /* Applique des points d'avancement à un jalon (borné à 100) */
+  /* Un jalon de plus. Le poids dit sa part dans l'avancement global ; un jalon
+     neuf démarre à 0 %. Renvoie le jalon créé, ou null si le libellé est vide. */
+  function ajouterJalon(chantier, libelle, poids) {
+    if (!chantier) return null;
+    var texte = String(libelle === undefined || libelle === null ? '' : libelle).trim();
+    if (!texte) return null;
+    chantier.jalons = chantier.jalons || [];
+    var j = {
+      id: uid('jalon'),
+      libelle: texte,
+      poids: Math.max(0, Number(poids) || 0),
+      avancement: 0
+    };
+    chantier.jalons.push(j);
+    return j;
+  }
+
+  /* Combien de tâches sont rattachées à un jalon (dans les journées du chantier). */
+  function tachesDuJalon(journees, jalonId) {
+    var n = 0;
+    (journees || []).forEach(function (j) {
+      (j.taches || []).forEach(function (t) { if (t.jalonId === jalonId) n++; });
+    });
+    return n;
+  }
+
+  /* Retrait d'un jalon. Les tâches rattachées ne sont pas supprimées : elles
+     sont détachées du jalon — leurs heures et leur avancement restent au
+     journal. L'avancement global est recalculé sur les jalons restants.
+     Renvoie { jalon, detachees, restants }, ou null si le jalon est inconnu. */
+  function retirerJalon(chantier, jalonId, journees) {
+    var jalons = (chantier && chantier.jalons) || [];
+    var idx = -1;
+    jalons.forEach(function (j, k) { if (j.id === jalonId) idx = k; });
+    if (idx < 0) return null;
+    var parti = jalons.splice(idx, 1)[0];
+    var detachees = 0;
+    (journees || []).forEach(function (j) {
+      (j.taches || []).forEach(function (t) {
+        if (t.jalonId === jalonId) { t.jalonId = ''; detachees++; }
+      });
+    });
+    return { jalon: parti, detachees: detachees, restants: jalons.length };
+  }
+
   function appliquerAvancement(chantier, jalonId, points) {
     var j = parId(chantier.jalons || [], jalonId);
     if (!j) return null;
@@ -857,6 +902,7 @@
     nouveauChantier: nouveauChantier, jalonsNeufs: jalonsNeufs,
     avancementChantier: avancementChantier, jalonsEnCours: jalonsEnCours,
     appliquerAvancement: appliquerAvancement,
+    ajouterJalon: ajouterJalon, retirerJalon: retirerJalon, tachesDuJalon: tachesDuJalon,
     /* journée */
     dureeJourneeMn: dureeJourneeMn, hommesHeures: hommesHeures,
     cumulHommesHeures: cumulHommesHeures, cumulMinutesSurSite: cumulMinutesSurSite,

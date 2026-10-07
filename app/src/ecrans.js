@@ -284,14 +284,20 @@
       '<span>' + U.esc(M.texteHeuresDec(M.cumulHommesHeures(js))) + '</span></div>' +
       '</div>';
 
-    html += '<div class="carte"><h3 class="carte-titre">' + I('avancement', 16) + ' Jalons <button type="button" class="mini-btn" data-a="editer-jalons">Modifier</button></h3>';
-    (ch.jalons || []).forEach(function (j) {
+    /* Jalons : liste modifiable — on ajoute, on ajuste, on supprime. */
+    var jalons = ch.jalons || [];
+    html += '<div class="carte"><h3 class="carte-titre">' + I('avancement', 16) + ' Jalons <button type="button" class="mini-btn" data-a="ajouter-jalon">' + I('plus', 14) + 'Ajouter</button></h3>';
+    if (!jalons.length) {
+      html += '<p class="mini">Aucun jalon pour ce chantier. Tant qu\'il n\'y en a pas, l\'avancement global reste à 0 %.</p>';
+    }
+    jalons.forEach(function (j) {
       var a = Number(j.avancement) || 0;
       html += '<button type="button" class="jalon-ligne" data-a="editer-jalon" data-id="' + j.id + '">' +
         '<span class="jalon-ic">' + (a >= 100 ? I('valideCercle', 18) : (a > 0 ? I('demi', 18) : I('vide', 18))) + '</span>' +
         '<span class="jalon-lib">' + U.esc(j.libelle) + '</span>' +
         '<span class="jalon-pct">' + a + ' %</span></button>';
     });
+    html += '<div class="mini" style="margin-top:8px">Touchez un jalon pour ajuster son avancement ou son poids, ou pour le supprimer.</div>';
     html += '</div>';
 
     if (ouverts.length) {

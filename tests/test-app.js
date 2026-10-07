@@ -81,6 +81,25 @@ function ecrire(sel, valeur) {
   return el;
 }
 function texteEcran() { return doc.getElementById('app').textContent.replace(/\s+/g, ' '); }
+/* Les feuilles s'ouvrent hors de #app et peuvent s'empiler : on travaille
+   toujours sur la derniere ouverte (la seule visible pour l'utilisateur). */
+function derniereFeuille() {
+  const toutes = [...doc.querySelectorAll('.feuille')];
+  return toutes.length ? toutes[toutes.length - 1] : null;
+}
+function texteFeuille() {
+  const f = derniereFeuille();
+  return f ? f.textContent.replace(/\s+/g, ' ') : '';
+}
+function boutonsFeuille() {
+  const f = derniereFeuille();
+  return f ? [...f.querySelectorAll('.feuille-pied .btn')] : [];
+}
+/* ferme toutes les feuilles ouvertes par les blocs précédents */
+function fermerFeuilles() {
+  [...doc.querySelectorAll('.feuille-fond')].forEach((ov) => ov.remove());
+  doc.body.classList.remove('sans-defilement');
+}
 
 (async function deroule() {
   await attente(200);
@@ -717,7 +736,100 @@ function texteEcran() { return doc.getElementById('app').textContent.replace(/\s
       } catch (e) { return false; }
     })());
 
-  /* --- 26. mise en page : une seule largeur pour toute l'interface --- */
+  /* --- 26. jalons : en ajouter, en supprimer --- */
+  fermerFeuilles();
+  const jalonsAvant = ch.jalons.length;
+  /* le premier jalon par défaut, avec une tâche rattachée dessus */
+  const jalonSupprime = ch.jalons[0];
+  const journeeTest = App.etat.journees[0];
+  journeeTest.taches.push({ id: 't-jalon', libelle: 'Essai rattaché', jalonId: jalonSupprime.id, avancement: 0, heures: 1, etat: 'FAIT' });
+
+  App.aller('fiche', { chantierId: ch.id, onglet: 'synthese' });
+  await attente(250);
+  T('la carte Jalons propose d\'ajouter', !!doc.querySelector('[data-a="ajouter-jalon"]'));
+
+  /* --- ajout --- */
+  clic('[data-a="ajouter-jalon"]');
+  await attente(200);
+  T('la feuille d\'ajout s\'ouvre', !!doc.querySelector('#njLib') && !!doc.querySelector('#njPoids'));
+  ecrire('#njLib', 'Formation des conducteurs de ligne');
+  ecrire('#njPoids', '4');
+  let boutonsAjout = boutonsFeuille();
+  boutonsAjout[boutonsAjout.length - 1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  await attente(350);
+  T('le jalon est ajouté au chantier', ch.jalons.length === jalonsAvant + 1, ch.jalons.length);
+  const jalonNeuf = ch.jalons[ch.jalons.length - 1];
+  T('le jalon ajouté porte son libellé et son poids',
+    jalonNeuf.libelle === 'Formation des conducteurs de ligne' && jalonNeuf.poids === 4,
+    jalonNeuf.libelle + ' / ' + jalonNeuf.poids);
+  T('le jalon ajouté démarre à 0 %', jalonNeuf.avancement === 0);
+  T('le jalon ajouté apparaît dans la liste', texteEcran().includes('Formation des conducteurs de ligne'));
+
+  /* un jalon sans libellé est refusé, la feuille reste ouverte */
+  clic('[data-a="ajouter-jalon"]');
+  await attente(200);
+  let boutonsVide = boutonsFeuille();
+  boutonsVide[boutonsVide.length - 1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  await attente(250);
+  T('un jalon sans libellé est refusé', ch.jalons.length === jalonsAvant + 1, ch.jalons.length);
+  T('la feuille reste ouverte pour corriger', !!doc.querySelector('#njLib'));
+  const fermerJ = derniereFeuille() && derniereFeuille().querySelector('[data-fb="fermer"]');
+  if (fermerJ) { fermerJ.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); await attente(250); }
+
+  /* --- renommer un jalon, et refuser un libellé vide --- */
+  clic('[data-a="editer-jalon"][data-id="' + jalonNeuf.id + '"]');
+  await attente(200);
+  T('la feuille du jalon permet de corriger son libellé', !!doc.querySelector('#jaLib'));
+  ecrire('#jaLib', 'Formation des conducteurs — niveau 2');
+  let boutonsRen = boutonsFeuille();
+  boutonsRen[boutonsRen.length - 1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  await attente(350);
+  T('le jalon est renommé', jalonNeuf.libelle === 'Formation des conducteurs — niveau 2', jalonNeuf.libelle);
+  T('le nouveau libellé apparaît dans la liste', texteEcran().includes('niveau 2'));
+  clic('[data-a="editer-jalon"][data-id="' + jalonNeuf.id + '"]');
+  await attente(200);
+  ecrire('#jaLib', '   ');
+  let boutonsVideLib = boutonsFeuille();
+  boutonsVideLib[boutonsVideLib.length - 1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  await attente(300);
+  T('un libellé vide n\'écrase pas l\'ancien', jalonNeuf.libelle === 'Formation des conducteurs — niveau 2', jalonNeuf.libelle);
+  T('la feuille reste ouverte pour corriger', !!doc.querySelector('#jaLib'));
+  const fermerRen = derniereFeuille() && derniereFeuille().querySelector('[data-fb="fermer"]');
+  if (fermerRen) { fermerRen.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })); await attente(250); }
+
+  /* --- suppression : tâche rattachée, confirmation, détachement --- */
+  clic('[data-a="editer-jalon"][data-id="' + jalonSupprime.id + '"]');
+  await attente(200);
+  const boutonsJalon = boutonsFeuille();
+  T('la feuille du jalon propose de le supprimer', boutonsJalon.length === 3, boutonsJalon.length);
+  T('elle annonce les tâches rattachées à ce jalon', /1 tâche\(s\)/.test(texteFeuille()), texteFeuille().slice(0, 80));
+  boutonsJalon[1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  await attente(250);
+  T('la suppression demande confirmation', texteFeuille().includes('Supprimer ce jalon ?'), texteFeuille().slice(0, 80));
+  T('la confirmation annonce le sort des tâches',
+    /restent au journal, détachées/.test(texteFeuille()), texteFeuille().slice(0, 120));
+  let boutonsConf = boutonsFeuille();
+  boutonsConf[boutonsConf.length - 1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  await attente(350);
+  T('le jalon est retiré du chantier',
+    ch.jalons.length === jalonsAvant && !Modele.parId(ch.jalons, jalonSupprime.id), ch.jalons.length);
+  T('la tâche rattachée est conservée, détachée du jalon',
+    journeeTest.taches.some((t) => t.id === 't-jalon' && t.jalonId === ''),
+    JSON.stringify(journeeTest.taches.filter((t) => t.id === 't-jalon')));
+  T('le jalon supprimé n\'est plus listé', !texteEcran().includes(jalonSupprime.libelle));
+
+  /* --- supprimer tous les jalons : plus de pourcentage trompeur --- */
+  App.etat.chantiers.push(Modele.nouveauChantier({ libelle: 'Chantier sans jalon' }));
+  const chVide = App.etat.chantiers[App.etat.chantiers.length - 1];
+  const journalVide = Modele.creerJournee(chVide);
+  App.etat.journees.push(journalVide);
+  [...chVide.jalons].forEach((x) => Modele.retirerJalon(chVide, x.id, [journalVide]));
+  App.aller('fiche', { chantierId: chVide.id, onglet: 'synthese' });
+  await attente(250);
+  T('la carte Jalons reste utilisable sans aucun jalon',
+    texteEcran().includes('Aucun jalon pour ce chantier') && !!doc.querySelector('[data-a="ajouter-jalon"]'));
+
+  /* --- 27. mise en page : une seule largeur pour toute l'interface --- */
   /* Le bandeau, le contenu et la barre du bas doivent partager la meme colonne :
      un bandeau reduit a son contenu (marges automatiques dans un conteneur flex)
      etait le defaut constate sur grand ecran. */
@@ -743,7 +855,7 @@ function texteEcran() { return doc.getElementById('app').textContent.replace(/\s
   T('aucune largeur figee en pixels pour les barres',
     !/\.(topbar|barre-bas|onglets)\s*\{[^}]*max-width:\s*\d+px/.test(feuilleCSS));
 
-  /* --- 27. aucune erreur d'exécution --- */
+  /* --- 28. aucune erreur d'exécution --- */
   T('aucune erreur d\'exécution', erreurs.length === 0, erreurs.slice(0, 3).join(' | '));
 
   console.log('\n' + '='.repeat(60));

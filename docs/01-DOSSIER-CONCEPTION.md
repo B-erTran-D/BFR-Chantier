@@ -63,6 +63,7 @@
 ### 2.1 Dans la v1
 - **Un utilisateur unique : le chef de chantier.** Pas de comptes, pas de saisie par les compagnons, pas de suivi nominatif des heures.
 - Création et suivi d'un **chantier** (client, site, équipements, effectif, jalons, dates).
+- **Jalons ajustables** : la liste livrée (13 jalons pondérés) est un point de départ. Sur chaque chantier, on **ajoute**, **renomme**, **pèse** et **supprime** les jalons — jusqu'à travailler sans jalon si le chantier ne s'y prête pas. Supprimer un jalon ne supprime jamais de tâche : les tâches rattachées restent au journal, détachées.
 - **Journée de chantier** : chrono, effectif et heures, tâches réalisées, avancement, blocages, matériel, sécurité, essais.
 - **Photos annotées** au doigt (reprise de BFR-Report).
 - **Point du soir** : PDF + e-mail pré-rempli aux responsables, avec règles de diffusion et d'escalade.
@@ -315,7 +316,7 @@ Objectifs de cet écran : **en 5 secondes, le chef de chantier sait quoi faire**
 
 | Onglet | Contenu |
 |---|---|
-| **Synthèse** | Avancement global (barre + %), jalons avec leur état, jours écoulés / prévus, blocages ouverts, prochaines étapes, dernières photos |
+| **Synthèse** | Avancement global (barre + %), jalons avec leur état — liste modifiable (ajouter, renommer, pondérer, supprimer) —, jours écoulés / prévus, blocages ouverts, prochaines étapes, dernières photos |
 | **Journal** | Liste des journées déjà clôturées (J1, J2, J3…) : date, effectif, heures, résumé. Ouvre le point du soir correspondant (PDF déjà généré, regénérable) |
 | **Effectif** | Effectif prévu et effectif réel jour par jour, heures cumulées sur le chantier *(pas de nominatif)* |
 | **Formation** | Sessions de formation avec leur état (prévue / faite), participants, documents |
