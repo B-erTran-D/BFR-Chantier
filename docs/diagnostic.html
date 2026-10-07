@@ -32,6 +32,13 @@
   .p-att{background:var(--att-bg);color:var(--att)}
   .p-non{background:var(--non-bg);color:var(--non)}
   .texte{font-size:13.5px;color:var(--muet);margin:8px 0 0}
+  button{font:inherit;font-weight:600;color:#fff;background:#0b5f80;border:0;border-radius:10px;
+    padding:10px 16px;cursor:pointer}
+  button:active{transform:translateY(1px)}
+  .boutons{margin:10px 0 0}
+  textarea{width:100%;margin-top:10px;box-sizing:border-box;font-family:ui-monospace,Menlo,Consolas,monospace;
+    font-size:12px;line-height:1.45;color:var(--texte);background:#fff;border:1px solid #d8dee9;
+    border-radius:10px;padding:10px;resize:vertical}
   .bouton{display:block;width:100%;border:0;border-radius:12px;background:var(--cyan);color:#04222e;
     font-family:Poppins,system-ui,sans-serif;font-size:15px;font-weight:600;padding:13px;margin-top:10px}
   ol{margin:8px 0 0 18px;padding:0;font-size:13.5px}
@@ -54,8 +61,11 @@
   <div class="carte">
     <h2>2. Manifeste servi par le site</h2>
     <table id="man"><tr><td>Lecture…</td><td></td></tr></table>
-    <p class="texte">L'identifiant (<code>id</code>) est ce qui distingue cette application d'une
-      autre installée depuis le même domaine. Il doit être unique.</p>
+    <p class="texte">L'identité d'une installation, pour Chrome, c'est le couple
+      <b>identifiant (<code>id</code>) + adresse de démarrage (<code>start_url</code>)</b>.
+      Deux applications du même domaine doivent avoir les deux différentes, et c'est
+      en changeant <b>les deux ensemble</b> qu'on fait oublier à Chrome un
+      enregistrement d'installation périmé.</p>
   </div>
 
   <div class="carte">
@@ -74,12 +84,22 @@
       qu'aucune application <b>BFR Chantier</b> ne figure dans les applications du
       téléphone, l'enregistrement d'installation est <b>périmé</b> : il pointe vers une
       application qui n'existe plus. Le remède est de changer l'identifiant
-      (<code>id</code>) du manifeste — voir PUBLIER-SUR-GITHUB.md (§ 7).</p>
+      (<code>id</code>) <b>et</b> l'adresse de démarrage (<code>start_url</code>) du
+      manifeste, en même temps — voir PUBLIER-SUR-GITHUB.md (§ 7).</p>
   </div>
 
   <div class="carte">
     <h2>5. Hors connexion (service worker)</h2>
     <table id="sw"><tr><td>Lecture…</td><td></td></tr></table>
+  </div>
+
+  <div class="carte">
+    <h2>6. Rapport à envoyer</h2>
+    <p class="texte">Ce rapport décrit ce que <b>votre</b> téléphone voit : la version de Chrome,
+      le manifeste reçu, l'état de l'installation et du service worker. Copiez-le et
+      transmettez-le — il évite de deviner. Il ne contient <b>aucune donnée de chantier</b>.</p>
+    <div class="boutons"><button type="button" id="copier">Copier le rapport</button></div>
+    <textarea id="rapport" readonly rows="12" spellcheck="false"></textarea>
   </div>
 
   <div class="carte">
@@ -97,8 +117,10 @@
         ce domaine : BFR SAV partage la même origine, et vous effaceriez ses
         chantiers et ses rapports en même temps.</li>
       <li>Rouvrez l'application, puis installez-la à nouveau. Si le message
-        persiste, il faut <b>changer l'identifiant du manifeste</b> (§ 7 de
-        PUBLIER-SUR-GITHUB.md) : Chrome considère alors une application neuve.</li>
+        persiste, il faut <b>changer l'identifiant du manifeste et son adresse de
+        démarrage</b> (§ 7 de PUBLIER-SUR-GITHUB.md) : Chrome considère alors une
+        application neuve. Changer le seul identifiant ne suffit pas toujours —
+        l'enregistrement périmé est retrouvé par l'adresse de démarrage.</li>
     </ol>
 
     <h2>Autres cas</h2>
@@ -254,6 +276,71 @@
       }
     }).catch(function () { });
   }
+
+  /* ------------------------------------------------- 6. rapport à envoyer */
+  /* On relit les cartes affichées : le rapport décrit donc exactement ce que
+     l'utilisateur a sous les yeux, sans rien recalculer. */
+  function lireTable(id) {
+    var t = document.getElementById(id);
+    if (!t) return '';
+    return [].map.call(t.rows, function (r) {
+      return '  ' + (r.cells[0] ? r.cells[0].textContent.trim() : '') + ' : ' +
+                    (r.cells[1] ? r.cells[1].textContent.trim() : '');
+    }).join('\n');
+  }
+
+  function composerRapport() {
+    var l = [];
+    l.push('DIAGNOSTIC BFR CHANTIER');
+    l.push('Date : ' + new Date().toLocaleString('fr-FR'));
+    l.push('Page : ' + location.href);
+    l.push('Navigateur : ' + navigator.userAgent);
+    l.push('Mode installé (standalone) : ' + (matchMedia('(display-mode: standalone)').matches ? 'OUI' : 'non'));
+    l.push('');
+    ['ctx', 'man', 'sw'].forEach(function (id) {
+      var t = document.getElementById(id);
+      if (!t) return;
+      var carte = t.closest('.carte');
+      l.push('[' + (carte ? carte.querySelector('h2').textContent.trim() : id) + ']');
+      l.push(lireTable(id));
+      l.push('');
+    });
+    var invite = document.getElementById('invite');
+    l.push('[3. Invite d\'installation]');
+    l.push('  ' + (invite ? invite.textContent.replace(/\s+/g, ' ').trim() : '(vide)'));
+    l.push('');
+    var inst = document.getElementById('installe');
+    l.push('[4. Ce que Chrome croit installé]');
+    l.push(lireTable('installe'));
+    return l.join('\n');
+  }
+
+  var champ = document.getElementById('rapport');
+  var bouton = document.getElementById('copier');
+  function remplir() { if (champ) champ.value = composerRapport(); }
+  setTimeout(remplir, 1500);            /* le temps que les cartes se remplissent */
+  setInterval(remplir, 2000);           /* et l'invite peut arriver plus tard */
+  window.addEventListener('appinstalled', function () { setTimeout(remplir, 300); });
+
+  if (bouton) bouton.addEventListener('click', function () {
+    remplir();
+    if (!champ) return;
+    champ.style.height = 'auto';
+    champ.style.height = Math.min(360, champ.scrollHeight + 8) + 'px';
+    champ.focus();
+    champ.select();
+    var fait = function () {
+      bouton.textContent = 'Copié';
+      setTimeout(function () { bouton.textContent = 'Copier le rapport'; }, 2000);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(champ.value).then(fait, function () {
+        try { document.execCommand('copy'); fait(); } catch (e) { /* le texte reste sélectionné */ }
+      });
+    } else {
+      try { document.execCommand('copy'); fait(); } catch (e) { /* à recopier à la main */ }
+    }
+  });
 })();
 </script>
 </body>

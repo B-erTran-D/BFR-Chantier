@@ -26,7 +26,7 @@ RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(RACINE, 'docs')
 
 # Identifiant du manifeste : chemin absolu, propre au projet, jamais réutilisé.
-ID_ATTENDU = 'bfr-chantier-installation'
+ID_ATTENDU = 'bfr-chantier-installation-2'
 ID_DU_SAV = 'bfr-sav-v3-bleu-petrole'      # projet BFR-Report (source : son manifeste)
 
 FICHIERS_ATTENDUS = ['index.html', 'manifest.json', 'sw.js', 'diagnostic.html',
@@ -61,8 +61,16 @@ def main():
         avis.append('manifeste : « related_applications » (platform webapp) absent — '
                     'la page de diagnostic ne pourra pas détecter une installation périmée')
 
-    if mf.get('start_url') != './':
-        problemes.append('manifeste : start_url = %r (attendu « ./ »)' % mf.get('start_url'))
+    # start_url fait partie de l'identité de l'installation : elle doit rester
+    # dans le dossier (portée « ./ ») et différer de celle du projet SAV.
+    su = mf.get('start_url', '')
+    if not su:
+        problemes.append('manifeste : start_url absent')
+    elif su != './' and su != './index.html':
+        avis.append('manifeste : start_url = %r (attendu « ./ » ou « ./index.html » — '
+                    'toute autre valeur sortirait du dossier publié)' % su)
+    if su and not su.startswith('.'):
+        problemes.append('manifeste : start_url = %r (doit rester relative au dossier)' % su)
     if mf.get('scope') != './':
         problemes.append('manifeste : scope = %r (attendu « ./ »)' % mf.get('scope'))
     if mf.get('display') not in ('standalone', 'fullscreen', 'minimal-ui'):

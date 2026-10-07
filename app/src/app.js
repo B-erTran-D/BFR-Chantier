@@ -1034,6 +1034,37 @@
       });
     },
 
+    /* Rouvrir une journée clôturée : c'est le chemin de correction annoncé à
+       l'utilisateur (« pour corriger après envoi : Journal → Rouvrir »). La
+       journée redevient modifiable ; si elle avait déjà été envoyée, le
+       prochain point du soir portera la mention « version 2 ». */
+    'rouvrir-journee': function (el) {
+      var j = journee(el.getAttribute('data-id'));
+      if (!j) return;
+      if (j.statut !== 'CLOTUREE') {          /* déjà ouverte : on l'ouvre */
+        chargerPhotos(j).then(function () {
+          aller('journee', { chantierId: j.chantierId, journeeId: j.id });
+        });
+        return;
+      }
+      var ch = chantier(j.chantierId);
+      var dejaEnvoyee = !!j.envoiLe;
+      var version = (Number(j.version) || 1) + 1;
+      j.statut = 'OUVERTE';
+      j.clotureeLe = '';
+      /* Une journée rouverte remet le chantier en cours : la date de fin réelle
+         posée par la clôture ne tient plus. Elle sera reposée à la prochaine
+         clôture si la journée est bien la dernière prévue. */
+      if (ch && ch.dateFinReelle === j.date) { ch.dateFinReelle = ''; sauverChantier(ch); }
+      chargerPhotos(j).then(function () {
+        return sauverJournee(j);
+      }).then(function () {
+        aller('journee', { chantierId: j.chantierId, journeeId: j.id });
+        U.toast('Journée J' + j.numero + ' rouverte — vous pouvez la corriger'
+          + (dejaEnvoyee ? '. Le prochain point portera la mention « version ' + version + ' »' : ''), 'ok');
+      });
+    },
+
     'demarrer-horloge': function () {
       var j = journeeCourante();
       j.debut = M.maintenant();
@@ -1270,6 +1301,40 @@
       sauverChantier(ch); rendre();
     },
 
+    /* Supprimer un chantier : ses journées, ses sessions de formation et ses
+       photos partent avec lui. Rien ne doit rester en base — ni à l'écran. */
+    'supprimer-chantier': function (el) {
+      var ch = chantier(el.getAttribute('data-id'));
+      if (!ch) return;
+      var js = journeesDe(ch.id);
+      var se = etat.sessions.filter(function (s) { return s.chantierId === ch.id; });
+      var photos = [];
+      js.forEach(function (j) {
+        (j.actions || []).forEach(function (a) { if (a.photo) photos.push(a.photo); });
+      });
+      U.confirmer('Supprimer « ' + ch.libelle + ' » et ses ' + js.length + ' journée(s) ? '
+        + 'Les données de ce chantier seront effacées de ce téléphone. Cette action est définitive.',
+        function () {
+          var travaux = [Store.supprimer(Store.ST_CHANTIERS, ch.id)];
+          js.forEach(function (j) { travaux.push(Store.supprimer(Store.ST_JOURNEES, j.id)); });
+          se.forEach(function (s) { travaux.push(Store.supprimer(Store.ST_SESSIONS, s.id)); });
+          photos.forEach(function (p) { travaux.push(Store.supprimer(Store.ST_PHOTOS, p)); });
+          Promise.all(travaux).then(function () {
+            etat.chantiers = etat.chantiers.filter(function (c) { return c.id !== ch.id; });
+            etat.journees = etat.journees.filter(function (j) { return j.chantierId !== ch.id; });
+            etat.sessions = etat.sessions.filter(function (s) { return s.chantierId !== ch.id; });
+            photos.forEach(function (p) { delete etat.photosCache[p]; });
+            etat.vue.chantierId = null;
+            etat.vue.journeeId = null;
+            aller('accueil');
+            U.toast('Chantier supprimé', 'ok');
+          }, function (err) {
+            U.toast('Suppression impossible : ' + (err && err.message ? err.message : 'erreur de stockage'), 'erreur');
+          });
+        },
+        'Supprimer');
+    },
+
     /* jalons */
     'editer-jalon': function (el) { feuilleJalon(chantierCourant(), el.getAttribute('data-id')); },
     'ajouter-jalon': function () { feuilleNouveauJalon(chantierCourant()); },
@@ -1493,7 +1558,15 @@
     if (!b) return;
     var a = b.getAttribute('data-a');
     var fn = actions[a];
-    if (!fn) return;
+    if (!fn) {
+      /* Un bouton dont l'action n'existe pas ne doit jamais rester muet :
+         c'est ainsi que « Rouvrir » (Journal) et « Supprimer ce chantier »
+         semblaient cassés, sans le moindre message. On le signale, et on
+         garde la trace dans la console pour la mise au point. */
+      console.error('Action inconnue : ' + a);
+      U.toast('Ce bouton n\'est pas disponible (' + a + ') — signalez-le.', 'erreur');
+      return;
+    }
     e.preventDefault();
     U.vibrer();
     try { fn(b); } catch (err) {

@@ -961,6 +961,82 @@ function fermerFeuilles() {
   T('aucune largeur figee en pixels pour les barres',
     !/\.(topbar|barre-bas|onglets)\s*\{[^}]*max-width:\s*\d+px/.test(feuilleCSS));
 
+  /* --- 29. « Rouvrir » (Journal) : le bouton doit vraiment rouvrir --- */
+  /* Défaut signalé le 7 octobre 2026 : le bouton ne faisait rien. Le bandeau
+     construisait « data-a="rouvrir-journee" » alors que l'action n'existait
+     pas dans le répartiteur, qui ignorait le clic en silence. */
+  const jourAvant = App.etat.journees[0];
+  jourAvant.statut = 'CLOTUREE';                 /* on se place après clôture */
+  App.aller('fiche', { chantierId: ch.id, onglet: 'journal' });
+  await attente(200);
+  const boutonRouvrir = doc.querySelector('[data-a="rouvrir-journee"]');
+  T('le Journal propose « Rouvrir » sur une journée clôturée', !!boutonRouvrir);
+  T('la journée est bien close avant le clic', jourAvant.statut === 'CLOTUREE');
+  if (boutonRouvrir) {
+    boutonRouvrir.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    await attente(300);
+  }
+  T('« Rouvrir » rouvre la journée', jourAvant.statut === 'OUVERTE', jourAvant.statut);
+  T('la journée rouverte est modifiable (écran journee)', texteEcran().includes('Effectif'));
+  T('le bouton de clôture est de retour',
+    !!doc.querySelector('[data-a="cloturer-journee"]') && !doc.querySelector('[data-a="rouvrir-journee"]'));
+  T('plus de date de clôture résiduelle', !jourAvant.clotureeLe, String(jourAvant.clotureeLe));
+
+  /* --- 30. « Supprimer ce chantier » (Réglages) : bouton mort, même cause -- */
+  App.aller('fiche', { chantierId: ch.id, onglet: 'reglages' });
+  await attente(250);
+  const boutonSuppr = doc.querySelector('[data-a="supprimer-chantier"]');
+  T('les réglages du chantier proposent la suppression', !!boutonSuppr);
+  if (boutonSuppr) {
+    boutonSuppr.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    await attente(250);
+    T('la suppression demande confirmation', /Supprimer «/.test(texteFeuille()), texteFeuille().slice(0, 40));
+    const boutons = boutonsFeuille();
+    const confirmer = boutons[boutons.length - 1];
+    T('la feuille de confirmation a deux boutons', boutons.length === 2, boutons.length);
+    if (confirmer) confirmer.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    await attente(400);
+  }
+  fermerFeuilles();
+  /* le scénario contient un second chantier : c'est le chantier cliqué qui
+     doit disparaître, et lui seul */
+  T('le chantier supprimé a disparu de l\'état',
+    !App.etat.chantiers.some((c) => c.id === ch.id), App.etat.chantiers.length + ' chantier(s) restant(s)');
+  T('ses journées ont disparu',
+    !App.etat.journees.some((x) => x.chantierId === ch.id), App.etat.journees.length + ' journée(s) restante(s)');
+  T('les autres chantiers sont intacts', App.etat.chantiers.length === 1, App.etat.chantiers.length);
+  T('retour à l\'accueil', App.etat.vue.ecran === 'accueil', App.etat.vue.ecran);
+  const restes = await dom.window.Store.tous(dom.window.Store.ST_CHANTIERS);
+  T('plus ce chantier en base', !restes.some((c) => c.id === ch.id), restes.length + ' en base');
+  const restesJ = await dom.window.Store.tous(dom.window.Store.ST_JOURNEES);
+  T('plus ses journées en base', !restesJ.some((x) => x.chantierId === ch.id), restesJ.length + ' en base');
+
+  /* --- 31. garde-fou : aucun bouton sans action --- */
+  /* Le répartiteur ignorait en silence une action inconnue : un bouton pouvait
+     rester inerte sans le moindre message (c'est arrivé deux fois). Contrôle
+     statique : chaque valeur « data-a="…" » écrite en clair dans le code livré
+     doit correspondre à une action déclarée — sauf les boutons gérés par leur
+     propre écran (annotateur photo, dictée), qui coupent la propagation. */
+  const sansCommentaires = html.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const actionsDeclarees = new Set([...sansCommentaires.matchAll(/'([a-z][a-z0-9-]*)':\s*function/g)].map((m) => m[1]));
+  const locales = ['annuler', 'valider', 'undo', 'vider', 'dicter'];
+  const valeurs = new Set();
+  for (const m of sansCommentaires.matchAll(/data-a="([^"]{0,240})"/g)) {
+    const zone = m[1];
+    for (const lit of zone.matchAll(/'([a-z][a-z0-9-]*)'/g)) valeurs.add(lit[1]);
+    if (/^[a-z][a-z0-9-]*$/.test(zone)) valeurs.add(zone);
+  }
+  const orphelins = [...valeurs].filter((v) => !actionsDeclarees.has(v) && locales.indexOf(v) === -1).sort();
+  T('le scan des boutons trouve des actions', valeurs.size > 20, valeurs.size);
+  T('chaque bouton écrit en clair a son action', orphelins.length === 0, orphelins.join(' | '));
+  /* et les exceptions sont bien gérées ailleurs, pas oubliées */
+  T('les boutons locaux (annotateur, dictée) sont bien pris en charge',
+    locales.every((n) => sansCommentaires.includes("dataset.a === '" + n + "'") ||
+      sansCommentaires.includes("data-a=\"" + n + "\"") && sansCommentaires.includes("getAttribute('data-vers')")),
+    locales.join(' | '));
+  T('une action inconnue est signalée, plus ignorée en silence',
+    /Action inconnue/.test(sansCommentaires) && !/var fn = actions\[a\];\s*if \(!fn\) return;/.test(sansCommentaires));
+
   /* --- 28. garde-fou : une action ne peut pas utiliser « el » sans le recevoir --- */
   /* C'est le défaut qui a produit « Erreur : el is not defined » sur le crayon
      du bandeau de la journée : une action déclarée « function () » alors que le

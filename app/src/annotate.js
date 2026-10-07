@@ -132,6 +132,10 @@
       this.canvas = overlay.querySelector('#annotCanvas');
 
       overlay.addEventListener('click', (e) => {
+        /* Cet écran a ses propres boutons (annuler, valider, undo, vider) : ils
+           ne doivent pas remonter jusqu'au répartiteur d'actions de
+           l'application, qui ne les connaît pas. */
+        e.stopPropagation();
         const o = e.target.closest('[data-outil]');
         if (o) {
           this.outil = o.dataset.outil;

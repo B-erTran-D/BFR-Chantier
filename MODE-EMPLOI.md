@@ -170,6 +170,8 @@ Les **documents de formation** — compte rendu de formation, feuille de présen
 
 - Un chantier dont le statut est **Réceptionné** ou **Clôturé** reste consultable : son journal, ses points du soir et ses documents sont conservés.
 - **Fin de chantier** : passez le statut à *Réceptionné* dans Réglages du chantier. *(Le « Compte rendu de chantier » qui rassemble tous les points du soir est prévu au lot L5.)*
+- **Corriger une journée déjà envoyée** : **Journal → Rouvrir**, corrigez, puis clôturez et renvoyez — le point portera la mention « version 2 ».
+- **Supprimer un chantier** : Réglages du chantier → **Supprimer ce chantier et ses journées**. Ses journées, ses photos et ses sessions de formation partent avec lui, **définitivement** (une confirmation est demandée). À réserver aux essais et aux saisies en double : pour un chantier réel, préférez le statut *Réceptionné* — le dossier reste consultable et la sauvegarde le conserve.
 
 ---
 

@@ -11,7 +11,8 @@
 
 1. Ouvrir l'adresse du site dans **Chrome** (elle vous a été communiquée par le bureau) :
   `https://<compte>.github.io/BFR-Chantier/`
-2. Menu **⋮** → **Ajouter à l'écran d'accueil** → **Installer**.
+2. Menu **⋮** → **Installer et créer un raccourci** → **Installer**
+  *(sur les versions plus anciennes : **Ajouter à l'écran d'accueil** → **Installer**).*
 3. Fermer Chrome et ouvrir **BFR Chantier** depuis l'icône : l'application démarre même sans réseau.
 
 *Sur iPhone* : ouvrir l'adresse dans **Safari** → **Partager** → **Sur l'écran d'accueil**.
@@ -65,12 +66,60 @@ Puis **Menu → Réglages → Liste clients → Importer un CSV** : le fichier e
 | L'écran reste sur « Chargement… » | Fermez l'application, ouvrez-la avec du réseau (Wi-Fi) une première fois |
 | Le bouton Envoyer ne propose pas Gmail | Choisissez « Partager » puis Gmail dans la liste ; à défaut, enregistrez le PDF et joignez-le au message |
 | Rien ne s'affiche après une mise à jour | Rouvrez l'application avec du réseau une seconde fois (le cache se met à jour) |
-| **Chrome dit « application déjà installée »** alors qu'elle ne l'est pas | Les deux applications BFR (SAV et Chantier) sont publiées sous le même domaine : Chrome mélange parfois leurs installations. Ouvrez **https://&lt;compte&gt;.github.io/BFR-Chantier/diagnostic.html** sur le téléphone : la page dit ce que Chrome voit, et propose le bouton d'installation si l'invite est disponible. Sinon : menu **⋮** → *Ajouter à l'écran d'accueil*, ou installez depuis un autre navigateur (Edge, Samsung Internet) |
+| **Chrome dit « application déjà installée »** alors qu'elle ne l'est pas | Les deux applications BFR (SAV et Chantier) sont publiées sous le même domaine : Chrome conserve un **enregistrement d'installation périmé** et croit l'application présente. Voir la marche à suivre détaillée ci-dessous |
 | **Avant de désinstaller une application BFR** | Faites **Menu → Exporter la sauvegarde** dans *chaque* application : la désinstallation efface les données du téléphone (chantiers, clients, photos) |
-| Chrome dit « application déjà installée » puis « impossible d'ouvrir l'application » | enregistrement d'installation **périmé** côté Chrome : ouvrir **`/diagnostic.html`** (carte 4 le confirme), désinstaller « BFR Chantier » s'il apparaît dans *Réglages → Applications*, puis réinstaller. **Ne jamais effacer les données du site** : BFR SAV est sur le même domaine |
+| Chrome dit « application déjà installée » puis « impossible d'ouvrir l'application » | même cause. Ouvrez **`/diagnostic.html`** : la **carte 4** confirme ce que Chrome croit installé, et la **carte 6** permet de nous envoyer le rapport d'un seul bouton. Puis suivez « Application fantôme » ci-dessous |
 | Le mail s'ouvre sans destinataire | Les adresses ne sont pas encore saisies sur ce téléphone : Menu → Réglages → Responsables (§ 2) |
 | Une adresse est refusée | Vérifiez la forme (`vous@exemple.fr`) : l'application indique les adresses invalides en rouge |
 | Le téléphone a été changé | Installez l'application, puis Menu → Réglages → **Importer** le fichier de sauvegarde `.json` |
+
+---
+
+## 6. Application fantôme : « déjà installée », mais introuvable
+
+Chrome garde la trace d'une installation qui n'a jamais abouti (ou qui a été
+supprimée) et **refuse alors d'installer** : il propose « Ouvrir l'application »,
+puis échoue, ou affiche « impossible d'ouvrir l'application ». La trace est
+interne à Chrome : l'application n'existe plus sur le téléphone.
+
+**À faire dans cet ordre.**
+
+0. **Si aucune application ne figure sur le téléphone** alors que Chrome dit
+   « déjà installée » : c'est le signe que Chrome garde une trace sans
+   application derrière. Dans ce cas, il n'y a **rien à désinstaller** : passez
+   directement au point 2, puis réinstallez. Le projet a changé l'identité
+   d'installation le 7 octobre 2026 (identifiant **et** adresse de démarrage) :
+   Chrome doit donc voir une application neuve.
+
+1. **Cherchez l'application sur le téléphone** — c'est la voie officielle :
+   **Réglages** (Android) → **Applications** → **Voir toutes les applications** →
+   cherchez **BFR Chantier** → si elle apparaît, **Désinstallez-la**.
+   Regardez aussi l'**écran d'accueil** et le **tiroir d'applications** :
+   appui long sur l'icône → **Informations sur l'application** → **Désinstaller**.
+   *Un ancien raccourci porte parfois le même nom.*
+
+2. **Vérifiez ce que Chrome voit.** Ouvrez
+   `https://<compte>.github.io/BFR-Chantier/diagnostic.html` dans Chrome :
+   la **carte 4** dit si Chrome croit une application installée, et la
+   **carte 6 → « Copier le rapport »** produit un texte à nous transmettre.
+   Le rapport ne contient **aucune donnée de chantier**.
+
+3. **Réinstallez** depuis la page de l'application : menu **⋮** →
+   **Installer et créer un raccourci** → **Installer**.
+
+4. **Si Chrome refuse toujours**, installez depuis **un autre navigateur** :
+   **Edge** ou **Samsung Internet** (Android). Chacun gère ses propres
+   installations, sans la trace laissée dans Chrome : l'application est
+   identique, hors connexion comprise. Attention : les données saisies dans
+   Chrome et dans Edge sont **séparées** (même téléphone, deux bases distinctes) —
+   ce n'est gênant que si vous saisissez dans les deux.
+
+> **Ne faites jamais « Effacer les données du site »** pour ce domaine dans
+> Chrome : **BFR SAV est publié sous le même domaine** et vous effaceriez ses
+> chantiers et ses rapports en même temps.
+
+> **Avant toute désinstallation** d'une application BFR qui contient des
+> données : **Menu → Exporter la sauvegarde**, dans *chaque* application.
 
 ---
 

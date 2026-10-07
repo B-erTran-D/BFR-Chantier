@@ -261,17 +261,26 @@ self.addEventListener('fetch', (e) => {
 # ATTENTION — si Chrome répond « cette application est déjà installée » alors
 # qu'aucune application BFR Chantier ne figure dans les applications du
 # téléphone, c'est que Chrome garde un enregistrement d'installation périmé.
-# Le remède est de CHANGER cette valeur (par exemple bfr-chantier-installation-2) :
-# Chrome voit alors une application neuve et propose une installation propre.
-# Les données, elles, appartiennent au site : elles ne bougent pas.
+# Le remède est de CHANGER, ENSEMBLE :
+#   · l'identifiant  (id)         → ici « …-2 », puis « …-3 » ;
+#   · l'adresse de démarrage (start_url) → « ./index.html », puis « ./index.html?s=3 ».
+# Changer l'identifiant seul ne suffit pas toujours : l'enregistrement périmé est
+# retrouvé par l'adresse de démarrage. Les deux doivent donc changer en même temps
+# (constaté le 7 octobre 2026 : identifiant neuf publié, message persistant).
+# Les données, elles, appartiennent au site : elles ne bougent pas. La portée
+# (scope) « ./ » couvre tout le dossier, l'application s'ouvre donc normalement.
 # Voir PUBLIER-SUR-GITHUB.md (§ 7).
 MANIFEST = {
-    "id": "bfr-chantier-installation",
+    "id": "bfr-chantier-installation-2",
     "name": "BFR Chantier — suivi des installations et formations",
     "short_name": "BFR Chantier",
     "description": "Suivi des journées de chantier, point du soir envoyé aux responsables, sessions de formation. Fonctionne hors connexion.",
     "lang": "fr",
-    "start_url": "./",
+    # start_url : identité de l'installation, au même titre que « id ».
+    # Deux applications du même domaine (BFR Chantier, BFR SAV) doivent avoir
+    # des start_url différentes — et un enregistrement périmé se retrouve par
+    # cette adresse : la changer est le geste qui débloque.
+    "start_url": "./index.html",
     "scope": "./",
     "display": "standalone",
     "orientation": "portrait",

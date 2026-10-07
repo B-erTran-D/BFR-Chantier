@@ -33,6 +33,7 @@ les données neutres ci-dessus, puis capturer.
 | `ecran-journee.png` | la journée en cours : chrono, effectif, tâches |
 | `ecran-point-du-soir.png` | le point du soir avant envoi |
 | `ecran-fiche-chantier.png` | la fiche chantier et ses jalons |
+| `ecran-journal.png` | l'onglet Journal : journée en cours et journées clôturées (Continuer / Rouvrir) |
 | `ecran-reglages.png` | les réglages, dont les destinataires |
 | `ecran-grand-ecran.png` | la même application sur tablette / ordinateur |
 | `bandeau-marque-journee.png` | le bandeau du haut : la marque officielle, puis le titre |
