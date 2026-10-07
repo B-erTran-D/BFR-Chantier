@@ -68,12 +68,40 @@
   </div>
 
   <div class="carte">
-    <h2>4. Hors connexion (service worker)</h2>
+    <h2>4. Ce que Chrome croit installé</h2>
+    <table id="installe"><tr><td>Lecture…</td><td></td></tr></table>
+    <p class="texte">Si Chrome annonce « cette application est déjà installée » alors
+      qu'aucune application <b>BFR Chantier</b> ne figure dans les applications du
+      téléphone, l'enregistrement d'installation est <b>périmé</b> : il pointe vers une
+      application qui n'existe plus. Le remède est de changer l'identifiant
+      (<code>id</code>) du manifeste — voir PUBLIER-SUR-GITHUB.md (§ 7).</p>
+  </div>
+
+  <div class="carte">
+    <h2>5. Hors connexion (service worker)</h2>
     <table id="sw"><tr><td>Lecture…</td><td></td></tr></table>
   </div>
 
   <div class="carte">
-    <h2>Si Chrome répond « application déjà installée »</h2>
+    <h2>Si Chrome répond « application déjà installée » puis « impossible d'ouvrir l'application »</h2>
+    <p class="texte">Ce n'est pas un défaut de l'application : Chrome garde un
+      <b>enregistrement d'installation périmé</b> et tente d'ouvrir une application
+      qui n'existe plus sur le téléphone. Dans l'ordre :</p>
+    <ol>
+      <li>Regardez la carte 4 ci-dessus : si Chrome voit une application installée
+        alors qu'aucune n'existe, c'est bien un enregistrement périmé.</li>
+      <li>Cherchez <b>BFR Chantier</b> dans les applications du téléphone et
+        désinstallez-la si elle existe — l'application ne s'étant jamais ouverte,
+        aucune donnée n'y est perdue.</li>
+      <li><b>N'utilisez jamais « Effacer les données du site »</b> dans Chrome pour
+        ce domaine : BFR SAV partage la même origine, et vous effaceriez ses
+        chantiers et ses rapports en même temps.</li>
+      <li>Rouvrez l'application, puis installez-la à nouveau. Si le message
+        persiste, il faut <b>changer l'identifiant du manifeste</b> (§ 7 de
+        PUBLIER-SUR-GITHUB.md) : Chrome considère alors une application neuve.</li>
+    </ol>
+
+    <h2>Autres cas</h2>
     <ol>
       <li>Ouvrez le menu de Chrome : s'il propose <b>Ouvrir l'application</b> au lieu d'<b>Installer l'application</b>, Chrome croit l'application installée.</li>
       <li>Cherchez l'icône sur l'écran d'accueil et dans le tiroir d'applications du téléphone.</li>
@@ -131,7 +159,33 @@
     man.innerHTML = ligne('Manifeste', badge('illisible : ' + e.message, 'p-non'));
   });
 
-  /* ------------------------------------------------- 3. invite d'installation */
+  /* --------------------------------------- 3. ce que Chrome croit installé */
+  var zoneInst = document.getElementById('installe');
+  function lireInstallation() {
+    if (!navigator.getInstalledRelatedApps) {
+      zoneInst.innerHTML = ligne('Détection', badge('non prise en charge par ce navigateur', 'p-att'));
+      return;
+    }
+    navigator.getInstalledRelatedApps().then(function (liste) {
+      var html = '';
+      if (liste && liste.length) {
+        html += ligne('Application installée vue par Chrome', badge('OUI', 'p-att'));
+        html += ligne('Type', (liste[0].platform || '—'));
+        html += ligne('Identifiant', '<code>' + (liste[0].id || '(non communiqué)') + '</code>');
+        html += ligne('Adresse de démarrage', '<code>' + (liste[0].url || '—') + '</code>');
+      } else {
+        html += ligne('Application installée vue par Chrome', badge('aucune', 'p-ok'));
+      }
+      zoneInst.innerHTML = html;
+    }).catch(function (e) {
+      zoneInst.innerHTML = ligne('Détection', badge('impossible : ' + e.message, 'p-att'));
+    });
+  }
+  lireInstallation();
+  /* après une installation réussie, on refait la lecture */
+  window.addEventListener('appinstalled', function () { lireInstallation(); });
+
+  /* ------------------------------------------------- 4. invite d'installation */
   var invite = document.getElementById('invite');
   var zone = document.getElementById('bouton');
   var differe = null;

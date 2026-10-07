@@ -26,7 +26,7 @@ RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(RACINE, 'docs')
 
 # Identifiant du manifeste : chemin absolu, propre au projet, jamais réutilisé.
-ID_ATTENDU = '/BFR-Chantier/'
+ID_ATTENDU = 'bfr-chantier-installation'
 ID_DU_SAV = 'bfr-sav-v3-bleu-petrole'      # projet BFR-Report (source : son manifeste)
 
 FICHIERS_ATTENDUS = ['index.html', 'manifest.json', 'sw.js', 'diagnostic.html',
@@ -51,10 +51,15 @@ def main():
         problemes.append('manifeste : « id » absent (Chrome calculerait l\'identité depuis start_url)')
     elif ident == ID_DU_SAV:
         problemes.append('manifeste : identifiant identique à celui du projet SAV (conflit d\'installation)')
-    elif not ident.startswith('/'):
-        avis.append('manifeste : « id » relatif (%r) — un chemin absolu est plus sûr : %s' % (ident, ID_ATTENDU))
     elif ident != ID_ATTENDU:
-        avis.append('manifeste : « id » = %r (attendu %r)' % (ident, ID_ATTENDU))
+        avis.append('manifeste : « id » = %r (attendu %r — c\'est ce changement volontaire qui '
+                    'fait oublier à Chrome un enregistrement d\'installation périmé)' % (ident, ID_ATTENDU))
+
+    # La page de diagnostic lit ce champ pour savoir si Chrome considère
+    # l'application comme installée : sans lui, la détection ne répond rien.
+    if not any((a or {}).get('platform') == 'webapp' for a in (mf.get('related_applications') or [])):
+        avis.append('manifeste : « related_applications » (platform webapp) absent — '
+                    'la page de diagnostic ne pourra pas détecter une installation périmée')
 
     if mf.get('start_url') != './':
         problemes.append('manifeste : start_url = %r (attendu « ./ »)' % mf.get('start_url'))

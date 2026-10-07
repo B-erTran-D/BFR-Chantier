@@ -1,5 +1,5 @@
 {
-  "id": "/BFR-Chantier/",
+  "id": "bfr-chantier-installation",
   "name": "BFR Chantier — suivi des installations et formations",
   "short_name": "BFR Chantier",
   "description": "Suivi des journées de chantier, point du soir envoyé aux responsables, sessions de formation. Fonctionne hors connexion.",
@@ -28,6 +28,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "./manifest.json"
     }
   ]
 }

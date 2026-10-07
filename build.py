@@ -254,8 +254,19 @@ self.addEventListener('fetch', (e) => {
 # …github.io/BFR-Chantier/) partagent l'origine : l'identifiant doit donc être
 # explicite, en chemin absolu, et n'être jamais réutilisé pour une autre
 # application. Voir diagnostic.html et PUBLIER-SUR-GITHUB.md (§ 7).
+# L'identité de l'application (champ « id ») est ce qui la distingue, pour
+# Chrome, d'une autre application servie depuis le même domaine (b-ertran-d.github.io
+# héberge aussi BFR-Report, l'application SAV).
+#
+# ATTENTION — si Chrome répond « cette application est déjà installée » alors
+# qu'aucune application BFR Chantier ne figure dans les applications du
+# téléphone, c'est que Chrome garde un enregistrement d'installation périmé.
+# Le remède est de CHANGER cette valeur (par exemple bfr-chantier-installation-2) :
+# Chrome voit alors une application neuve et propose une installation propre.
+# Les données, elles, appartiennent au site : elles ne bougent pas.
+# Voir PUBLIER-SUR-GITHUB.md (§ 7).
 MANIFEST = {
-    "id": "/BFR-Chantier/",
+    "id": "bfr-chantier-installation",
     "name": "BFR Chantier — suivi des installations et formations",
     "short_name": "BFR Chantier",
     "description": "Suivi des journées de chantier, point du soir envoyé aux responsables, sessions de formation. Fonctionne hors connexion.",
@@ -270,6 +281,11 @@ MANIFEST = {
         {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
         {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
         {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    ],
+    # Permet à la page de diagnostic de savoir si Chrome considère
+    # l'application comme installée (navigator.getInstalledRelatedApps).
+    "related_applications": [
+        {"platform": "webapp", "url": "./manifest.json"}
     ]
 }
 
