@@ -523,6 +523,15 @@
 
   /* ======================= Journée : heures et effectif ================= */
 
+  /* La pause en cours : la dernière, si son heure de reprise n'est pas encore
+     notée. Renvoie null si l'activité est en cours (pas de pause ouverte). */
+  function pauseEnCours(journee) {
+    if (!journee || journee.fin) return null;   /* journée close : plus rien en cours */
+    var pauses = journee.pauses || [];
+    var derniere = pauses[pauses.length - 1];
+    return (derniere && !derniere.fin) ? derniere : null;
+  }
+
   function dureeJourneeMn(journee) {
     if (!journee) return 0;
     var debut = minutes(journee.debut), fin = minutes(journee.fin);
@@ -532,6 +541,9 @@
     if (total < 0) total += 24 * 60;
     (journee.pauses || []).forEach(function (p) {
       var a = minutes(p.debut), b = minutes(p.fin);
+      /* une pause encore ouverte court jusqu'à l'instant présent (ou jusqu'au
+         départ de la journée) : le compteur ne tourne pas pendant la pause */
+      if (a !== null && b === null) b = fin;
       if (a !== null && b !== null && b >= a) total -= (b - a);
     });
     return Math.max(0, total);
@@ -904,7 +916,7 @@
     appliquerAvancement: appliquerAvancement,
     ajouterJalon: ajouterJalon, retirerJalon: retirerJalon, tachesDuJalon: tachesDuJalon,
     /* journée */
-    dureeJourneeMn: dureeJourneeMn, hommesHeures: hommesHeures,
+    dureeJourneeMn: dureeJourneeMn, pauseEnCours: pauseEnCours, hommesHeures: hommesHeures,
     cumulHommesHeures: cumulHommesHeures, cumulMinutesSurSite: cumulMinutesSurSite,
     tachesNonTerminees: tachesNonTerminees, blocagesOuverts: blocagesOuverts,
     blocagesDuJour: blocagesDuJour, alerteGrave: alerteGrave, creerJournee: creerJournee,

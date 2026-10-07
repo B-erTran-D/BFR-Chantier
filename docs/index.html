@@ -316,6 +316,9 @@ button.carte, button.action-ligne, button.tache-ligne, button.jalon-ligne, butto
 }
 .chrono-bloc .btn.s { background: rgba(255, 255, 255, .13); color: #fff; border-color: rgba(255, 255, 255, .26); }
 .chrono-bloc .mini { color: rgba(255, 255, 255, .66); }
+/* journée en pause : un filet cyan à gauche marque l'état sans décaler le texte
+   (ombrage intérieur, donc aucun déplacement de contenu) */
+.chrono-bloc.en-pause { box-shadow: inset 4px 0 0 var(--bfr-primary), 0 4px 16px rgba(31, 28, 69, .22); }
 .chrono-bloc svg { color: var(--bfr-primary); }
 
 /* ------------------------------- onglets ----------------------------- */
@@ -1060,6 +1063,15 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
 
   /* ======================= Journée : heures et effectif ================= */
 
+  /* La pause en cours : la dernière, si son heure de reprise n'est pas encore
+     notée. Renvoie null si l'activité est en cours (pas de pause ouverte). */
+  function pauseEnCours(journee) {
+    if (!journee || journee.fin) return null;   /* journée close : plus rien en cours */
+    var pauses = journee.pauses || [];
+    var derniere = pauses[pauses.length - 1];
+    return (derniere && !derniere.fin) ? derniere : null;
+  }
+
   function dureeJourneeMn(journee) {
     if (!journee) return 0;
     var debut = minutes(journee.debut), fin = minutes(journee.fin);
@@ -1069,6 +1081,9 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
     if (total < 0) total += 24 * 60;
     (journee.pauses || []).forEach(function (p) {
       var a = minutes(p.debut), b = minutes(p.fin);
+      /* une pause encore ouverte court jusqu'à l'instant présent (ou jusqu'au
+         départ de la journée) : le compteur ne tourne pas pendant la pause */
+      if (a !== null && b === null) b = fin;
       if (a !== null && b !== null && b >= a) total -= (b - a);
     });
     return Math.max(0, total);
@@ -1441,7 +1456,7 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
     appliquerAvancement: appliquerAvancement,
     ajouterJalon: ajouterJalon, retirerJalon: retirerJalon, tachesDuJalon: tachesDuJalon,
     /* journée */
-    dureeJourneeMn: dureeJourneeMn, hommesHeures: hommesHeures,
+    dureeJourneeMn: dureeJourneeMn, pauseEnCours: pauseEnCours, hommesHeures: hommesHeures,
     cumulHommesHeures: cumulHommesHeures, cumulMinutesSurSite: cumulMinutesSurSite,
     tachesNonTerminees: tachesNonTerminees, blocagesOuverts: blocagesOuverts,
     blocagesDuJour: blocagesDuJour, alerteGrave: alerteGrave, creerJournee: creerJournee,
@@ -4558,16 +4573,21 @@ window.MARQUE_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAA
 
     /* chrono */
     var duree = M.dureeJourneeMn(j);
-    html += '<div class="chrono-bloc">' +
-      '<div class="ligne"><span>' + (j.debut ? I('horloge', 15) + ' ' + U.esc(j.debut) + (j.fin ? ' → ' + U.esc(j.fin) : ' → en cours') : I('horloge', 15) + ' Journée non démarrée') + '</span>' +
+    var enPause = M.pauseEnCours(j);
+    html += '<div class="chrono-bloc' + (enPause ? ' en-pause' : '') + '">' +
+      '<div class="ligne"><span>' + (j.debut ? I('horloge', 15) + ' ' + U.esc(j.debut) + (j.fin ? ' → ' + U.esc(j.fin) : (enPause ? ' → en pause depuis ' + U.esc(enPause.debut) : ' → en cours')) : I('horloge', 15) + ' Journée non démarrée') + '</span>' +
       '<b>' + U.esc(M.texteHeures(duree)) + '</b></div>' +
       '<div class="boutons-ligne">' +
-      (j.debut && !j.fin ? '<button type="button" class="btn s sm" data-a="pause-journee">' + I('pause', 15) + 'Pause</button>' : '') +
+      /* en pause, le bouton dit « Reprendre » et prend la couleur d'action :
+         c'est le geste attendu à ce moment-là. Sinon il propose « Pause ». */
+      (j.debut && !j.fin && !enPause ? '<button type="button" class="btn s sm" data-a="pause-journee">' + I('pause', 15) + 'Pause</button>' : '') +
+      (j.debut && !j.fin && enPause ? '<button type="button" class="btn o sm" data-a="pause-journee">' + I('lecture', 15) + 'Reprendre</button>' : '') +
       (j.debut && !j.fin ? '<button type="button" class="btn o sm" data-a="terminer-journee">' + I('arret', 15) + 'Fin de journée</button>' : '') +
       (!j.debut ? '<button type="button" class="btn v sm" data-a="demarrer-horloge">' + I('lecture', 15) + 'Démarrer</button>' : '') +
       '<button type="button" class="btn s sm" data-a="ajuster-journee">' + I('crayon', 15) + 'Ajuster</button>' +
       '</div>' +
-      (j.debut && !j.fin ? '<div class="mini">Heure d\'arrivée horodatée — l\'heure de départ est prise au clic sur « Fin de journée ».</div>' : '') +
+      (j.debut && !j.fin && enPause ? '<div class="mini">Pause commencée à ' + U.esc(enPause.debut) + ' — le décompte reprend au clic sur « Reprendre ».</div>' : '') +
+      (j.debut && !j.fin && !enPause ? '<div class="mini">Heure d\'arrivée horodatée — l\'heure de départ est prise au clic sur « Fin de journée ».</div>' : '') +
       '</div>';
 
     /* effectif & heures */
@@ -6665,5 +6685,5 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   });
 }
 </script>
-<script>window.CHANTIER_VERSION="16279ed0ae";window.CHANTIER_DATE="07/10/2026";</script></body>
+<script>window.CHANTIER_VERSION="b9e33e6e09";window.CHANTIER_DATE="07/10/2026";</script></body>
 </html>

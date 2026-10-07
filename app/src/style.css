@@ -298,6 +298,9 @@ button.carte, button.action-ligne, button.tache-ligne, button.jalon-ligne, butto
 }
 .chrono-bloc .btn.s { background: rgba(255, 255, 255, .13); color: #fff; border-color: rgba(255, 255, 255, .26); }
 .chrono-bloc .mini { color: rgba(255, 255, 255, .66); }
+/* journée en pause : un filet cyan à gauche marque l'état sans décaler le texte
+   (ombrage intérieur, donc aucun déplacement de contenu) */
+.chrono-bloc.en-pause { box-shadow: inset 4px 0 0 var(--bfr-primary), 0 4px 16px rgba(31, 28, 69, .22); }
 .chrono-bloc svg { color: var(--bfr-primary); }
 
 /* ------------------------------- onglets ----------------------------- */

@@ -496,16 +496,21 @@
 
     /* chrono */
     var duree = M.dureeJourneeMn(j);
-    html += '<div class="chrono-bloc">' +
-      '<div class="ligne"><span>' + (j.debut ? I('horloge', 15) + ' ' + U.esc(j.debut) + (j.fin ? ' → ' + U.esc(j.fin) : ' → en cours') : I('horloge', 15) + ' Journée non démarrée') + '</span>' +
+    var enPause = M.pauseEnCours(j);
+    html += '<div class="chrono-bloc' + (enPause ? ' en-pause' : '') + '">' +
+      '<div class="ligne"><span>' + (j.debut ? I('horloge', 15) + ' ' + U.esc(j.debut) + (j.fin ? ' → ' + U.esc(j.fin) : (enPause ? ' → en pause depuis ' + U.esc(enPause.debut) : ' → en cours')) : I('horloge', 15) + ' Journée non démarrée') + '</span>' +
       '<b>' + U.esc(M.texteHeures(duree)) + '</b></div>' +
       '<div class="boutons-ligne">' +
-      (j.debut && !j.fin ? '<button type="button" class="btn s sm" data-a="pause-journee">' + I('pause', 15) + 'Pause</button>' : '') +
+      /* en pause, le bouton dit « Reprendre » et prend la couleur d'action :
+         c'est le geste attendu à ce moment-là. Sinon il propose « Pause ». */
+      (j.debut && !j.fin && !enPause ? '<button type="button" class="btn s sm" data-a="pause-journee">' + I('pause', 15) + 'Pause</button>' : '') +
+      (j.debut && !j.fin && enPause ? '<button type="button" class="btn o sm" data-a="pause-journee">' + I('lecture', 15) + 'Reprendre</button>' : '') +
       (j.debut && !j.fin ? '<button type="button" class="btn o sm" data-a="terminer-journee">' + I('arret', 15) + 'Fin de journée</button>' : '') +
       (!j.debut ? '<button type="button" class="btn v sm" data-a="demarrer-horloge">' + I('lecture', 15) + 'Démarrer</button>' : '') +
       '<button type="button" class="btn s sm" data-a="ajuster-journee">' + I('crayon', 15) + 'Ajuster</button>' +
       '</div>' +
-      (j.debut && !j.fin ? '<div class="mini">Heure d\'arrivée horodatée — l\'heure de départ est prise au clic sur « Fin de journée ».</div>' : '') +
+      (j.debut && !j.fin && enPause ? '<div class="mini">Pause commencée à ' + U.esc(enPause.debut) + ' — le décompte reprend au clic sur « Reprendre ».</div>' : '') +
+      (j.debut && !j.fin && !enPause ? '<div class="mini">Heure d\'arrivée horodatée — l\'heure de départ est prise au clic sur « Fin de journée ».</div>' : '') +
       '</div>';
 
     /* effectif & heures */

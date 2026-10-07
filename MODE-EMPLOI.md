@@ -62,6 +62,9 @@ Une affaire passe par trois moments, et l'application le sait :
 ### Le matin — 2 minutes
 Sur l'accueil, touchez **Reprendre DÉMARRER LA JOURNÉE** : l'heure d'arrivée est notée et **le plan de la veille est repris automatiquement** (tâches non terminées + « prévu demain »). Vous pouvez commencer à travailler.
 
+### La pause : un appui, et le compteur s'arrête
+Pendant la journée, le bouton du bandeau chrono propose **Pause** ; une fois la pause commencée, il propose **Reprendre** (et le bloc affiche « en pause depuis 12:00 »). **Le temps de pause n'est pas compté** dans les heures de la journée. Un oubli n'est pas grave : au clic sur **Fin de journée**, toute pause encore ouverte est refermée à l'heure de départ.
+
 ### Toute la journée — au fil de l'eau
 | Ce que vous voulez noter | Où |
 |---|---|

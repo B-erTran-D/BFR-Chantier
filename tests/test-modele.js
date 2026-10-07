@@ -30,6 +30,25 @@ egal('texteHeures(450)', M.texteHeures(450), '7 h 30');
 egal('texteHeures(120)', M.texteHeures(120), '2 h 00');
 egal('texteHeuresDec(7.5)', M.texteHeuresDec(7.5), '7 h 30');
 
+/* ---------------------------------------------------------------- pauses */
+/* Une pause ouverte (sans heure de reprise) ne laisse pas le compteur courir :
+   elle est déduite jusqu'à l'instant présent. Cas choisis pour être vrai à
+   n'importe quelle heure de la journée. */
+const jPause = { debut: '00:00', fin: '', pauses: [{ debut: '00:00', fin: '' }], effectif: { nb: 1 } };
+egal('journée entièrement en pause : durée nulle', M.dureeJourneeMn(jPause), 0);
+T('la pause ouverte est reconnue comme en cours', !!M.pauseEnCours(jPause));
+egal('le début de la pause est connu', M.pauseEnCours(jPause).debut, '00:00');
+
+const jClos = { debut: '08:00', fin: '14:00', pauses: [{ debut: '10:00', fin: '' }], effectif: { nb: 2 } };
+egal('journée close avec pause restée ouverte : la pause court jusqu au départ',
+  M.dureeJourneeMn(jClos), 120);   /* 6 h moins 4 h */
+egal('une journée close n est plus en pause', M.pauseEnCours(jClos), null);
+
+egal('aucune pause : rien en cours', M.pauseEnCours({ debut: '08:00', fin: '', pauses: [] }), null);
+egal('pause terminée : rien en cours',
+  M.pauseEnCours({ pauses: [{ debut: '12:00', fin: '13:00' }] }), null);
+egal('journée absente : rien en cours', M.pauseEnCours(null), null);
+
 /* -------------------------------------------------- jalons : ajouter, retirer */
 /* Un chantier d'essai dédié : on ne touche pas au chantier des autres tests. */
 const chJ = M.nouveauChantier({ libelle: "Chantier d'essai — jalons" });

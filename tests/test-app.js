@@ -164,6 +164,31 @@ function fermerFeuilles() {
   T('écran de la journée', texteEcran().includes('Effectif'));
   T('l\'effectif est repris du chantier (3)', j.effectif.nb === 3, 'nb = ' + j.effectif.nb);
 
+  /* --- 3 bis. pause : le bouton change de libellé et d'icône --- */
+  const boutonPause = () => doc.querySelector('[data-a="pause-journee"]');
+  T('journée en cours : le bouton propose Pause',
+    !!boutonPause() && boutonPause().textContent.indexOf('Pause') === 0, boutonPause() && boutonPause().textContent.trim());
+  const iconeAvantPause = boutonPause() ? boutonPause().innerHTML : '';
+  clic('[data-a="pause-journee"]');
+  await attente(250);
+  T('en pause : le bouton propose Reprendre',
+    !!boutonPause() && boutonPause().textContent.indexOf('Reprendre') === 0, boutonPause() && boutonPause().textContent.trim());
+  T('l icône du bouton change avec l état',
+    !!boutonPause() && boutonPause().innerHTML !== iconeAvantPause);
+  T('la pause est notée, sans heure de reprise',
+    (j.pauses || []).length === 1 && !j.pauses[0].fin, JSON.stringify(j.pauses));
+  T('le chrono annonce la pause en cours', texteEcran().includes('en pause depuis'), texteEcran().slice(0, 90));
+  T('l écran explique comment reprendre', texteEcran().includes('le décompte reprend'));
+  T('le bloc du chrono porte l état en pause', !!doc.querySelector('.chrono-bloc.en-pause'));
+  clic('[data-a="pause-journee"]');
+  await attente(250);
+  T('après reprise : le bouton repart sur Pause',
+    !!boutonPause() && boutonPause().textContent.indexOf('Pause') === 0 && boutonPause().textContent.indexOf('Reprendre') < 0,
+    boutonPause() && boutonPause().textContent.trim());
+  T('la pause est refermée', !!((j.pauses || [])[0] || {}).fin, JSON.stringify(j.pauses));
+  T('le chrono repart en cours', texteEcran().includes('→ en cours'));
+  T('le bloc ne porte plus l état en pause', !doc.querySelector('.chrono-bloc.en-pause'));
+
   /* --- 4. ajustement des heures --- */
   clic('[data-a="ajuster-journee"]');
   await attente();
