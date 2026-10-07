@@ -21,13 +21,35 @@ Tout se fait dans le téléphone, **hors connexion**. Seul l'envoi du mail deman
 ## 2. Créer un chantier (2 minutes)
 
 1. **Nouveau chantier** (accueil, en bas).
-2. Choisissez un **modèle** si l'un correspond (installation neuve, mise en service, formation) : type et durée sont pré-remplis.
-3. Renseignez le **n° d'affaire**, le **libellé**, le **client** (3 lettres → la liste propose), la ville, le lieu d'intervention, le référent sur site.
-4. Précisez l'**effectif prévu**, la **durée prévue (jours)** et les **dates**.
-5. Ajoutez si besoin les **contraintes de site** (horaires, accès, consignes de sécurité).
-6. **Créer le chantier**.
+2. Choisissez un **modèle** si l'un correspond (**installation mécanique, mise en route, accompagnement**) : la phase, l'effectif et la durée sont pré-remplis.
+3. Vérifiez la **phase des travaux** : elle décide des tâches proposées pendant les journées (voir § 3). L'écran rappelle en dessous qui est attendu sur site.
+4. Renseignez le **n° d'affaire**, le **libellé**, le **client** (3 lettres → la liste propose), la ville, le lieu d'intervention, le référent sur site.
+5. Précisez l'**effectif prévu**, la **durée prévue (jours)** et les **dates**.
+6. Ajoutez si besoin les **contraintes de site** (horaires, accès, consignes de sécurité).
+7. **Créer le chantier**.
 
 > Les **13 jalons** d'avancement (préparation atelier, montage, câblage, raccordements, paramétrage, essais, formation, réception…) sont créés automatiquement, avec leur poids. Vous pouvez ajuster l'avancement de chacun d'un simple appui, dans l'onglet **Synthèse**.
+
+---
+
+### Les trois phases d'une affaire
+
+Une affaire passe par trois moments, et l'application le sait :
+
+| Phase | Qui vient | Ce qu'on y fait |
+|---|---|---|
+| **Installation mécanique** | un **mécanicien**, un **câbleur** en renfort selon les cas | montage, puis raccordements : électricité, air comprimé, réseau informatique et eau |
+| **Mise en route** | un ou des **automaticiens**, un **mécanicien** pour les réglages | démarrage de la ligne : entrées-sorties, sens de rotation des moteurs, essais, premières productions allégées, début de la formation |
+| **Accompagnement** | l'équipe technique, le plus souvent seule | la ligne tourne et le client est autonome : on reste sur site pour ses problèmes et ses besoins |
+
+**Quand l'équipe change, dites-le à l'application** : fiche du chantier → onglet **Synthèse** → bouton
+**Passer à…** (par exemple « Passer à mise en route »). Cela ne réécrit rien :
+
+- les **journées déjà saisies gardent leur phase** — un point du soir d'installation reste un point
+  d'installation, même consulté des semaines plus tard ;
+- les **tâches proposées** deviennent celles de la nouvelle phase : en mise en route, la liste parle
+  de mise sous tension, d'entrées-sorties, de sens de rotation et d'essais à blanc ;
+- le **point du soir** porte la mention de la phase et de l'équipe attendue.
 
 ---
 
@@ -129,7 +151,7 @@ Les **documents de formation** — compte rendu de formation, feuille de présen
 
 | Onglet | Ce qu'on y trouve |
 |---|---|
-| **Synthèse** | Avancement global (barre + %), **jalons** (touchez pour ajuster avancement et poids), **blocages ouverts** avec bouton *Lever*, prochaines étapes, dernière synthèse |
+| **Synthèse** | **Phase des travaux en cours** avec le bouton *Passer à…*, avancement global (barre + %), **jalons** (touchez pour ajuster avancement et poids), **blocages ouverts** avec bouton *Lever*, prochaines étapes, dernière synthèse |
 | **Journal** | Toutes les journées : date, effectif, heures, synthèse, blocages. Boutons *Continuer / Rouvrir* et *Point du soir* |
 | **Matériel** | Tout le matériel du chantier : manquants, livrés, à prévoir, retours atelier |
 | **Formation** | Les sessions, leurs participants et leurs documents |

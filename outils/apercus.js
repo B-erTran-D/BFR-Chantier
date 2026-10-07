@@ -45,11 +45,12 @@ const DONNEES = {
   },
   chantier: {
     numeroAffaire: '25-0142',
-    libelle: 'Ligne 3 — armoire et mise en service',
+    libelle: 'Ligne 3 — mise en route',
+    phase: 'MISE_EN_ROUTE',
     client: { nom: 'Client Exemple', ville: 'Bourg-en-Bresse' },
-    dureePrevueJours: 6,
-    effectifPrevu: 3,
-    equipe: '2 monteurs + 1 électricien'
+    dureePrevueJours: 8,
+    effectifPrevu: 2,
+    equipe: '1 automaticien + 1 mécanicien (réglages)'
   }
 };
 
@@ -106,41 +107,42 @@ async function ecrans() {
     const ch = M.nouveauChantier(D.chantier);
     ch.statut = 'EN_COURS';
     ch.dateDebutReelle = M.aujourdhui();
-    ['prepa', 'expedition', 'montage'].forEach((j) => M.appliquerAvancement(ch, j, 100));
-    M.appliquerAvancement(ch, 'cablage', 90);
-    M.appliquerAvancement(ch, 'raccordement', 60);
-    M.appliquerAvancement(ch, 'parametrage', 35);
-    M.appliquerAvancement(ch, 'essais_blanc', 10);
+    ['prepa', 'expedition', 'montage', 'cablage'].forEach((j) => M.appliquerAvancement(ch, j, 100));
+    M.appliquerAvancement(ch, 'raccordement', 100);
+    M.appliquerAvancement(ch, 'reseaux', 100);
+    M.appliquerAvancement(ch, 'parametrage', 80);
+    M.appliquerAvancement(ch, 'essais_blanc', 45);
+    M.appliquerAvancement(ch, 'essais_prod', 15);
 
     /* journée : horaires, tâches, actions, blocages, matériel, essais */
     const j = M.creerJournee(ch, null, M.aujourdhui());
     j.debut = '07:45'; j.fin = '16:30'; j.pauses = [{ minutes: 45 }];
-    j.effectif = { nb: 3, detail: '2 monteurs, 1 électricien' };
+    j.effectif = { nb: 2, detail: '1 automaticien + 1 mécanicien' };
     j.taches = [
-      { id: 't1', libelle: 'Montage support moteur', jalonId: 'montage', etat: 'FAIT',
-        avancement: 0, heures: 2.5, motif: '', origine: '' },
-      { id: 't2', libelle: 'Câblage armoire puissance', jalonId: 'cablage', etat: 'PARTIEL',
-        avancement: 0, heures: 4, motif: 'reprise après repérage', origine: '' },
-      { id: 't3', libelle: 'Raccordement presse 3', jalonId: 'raccordement', etat: 'NON_FAIT',
-        avancement: 0, heures: 0, motif: 'consignation client non faite', origine: '' }
+      { id: 't1', libelle: 'Contrôle des entrées-sorties', jalonId: 'parametrage', etat: 'FAIT',
+        avancement: 8, heures: 3, motif: '', origine: '' },
+      { id: 't2', libelle: 'Contrôle du sens de rotation des moteurs', jalonId: 'parametrage', etat: 'PARTIEL',
+        avancement: 0, heures: 2, motif: 'moteur M4 à reprendre avec le mécanicien', origine: '' },
+      { id: 't3', libelle: 'Premières productions allégées', jalonId: 'essais_prod', etat: 'PREVU',
+        avancement: 0, heures: 0, motif: '', origine: '' }
     ];
     j.actions = [
-      { id: 'a1', activite: 'MONTAGE', categorie: 'AVANCEMENT', photo: '',
-        texte: 'Armoire AP3 posée et fixée — repérage conforme', heure: '09:15' },
-      { id: 'a2', activite: 'CABLAGE', categorie: 'INFO', photo: '',
-        texte: 'Câblage puissance moteur M1 terminé', heure: '11:40' }
+      { id: 'a1', activite: 'PARAMETRAGE', categorie: 'AVANCEMENT', photo: '',
+        texte: 'Entrées-sorties vérifiées : 24/24 conformes', heure: '09:15' },
+      { id: 'a2', activite: 'ESSAI', categorie: 'INFO', photo: '',
+        texte: 'Essai à blanc partiel : cycle de démarrage OK', heure: '11:40' }
     ];
     j.blocages = [
-      { id: 'b1', description: 'Consignation du départ D3 non faite', gravite: 1,
-        debloqueur: 'CLIENT', action: 'Faire consigner le départ D3 par l\'exploitant', echeance: 'sous 24 h',
+      { id: 'b1', description: 'Accès à la zone presse refusé pour l\'essai', gravite: 1,
+        debloqueur: 'CLIENT', action: 'Décaler la production d\'une heure', echeance: 'sous 24 h',
         statut: 'OUVERT', ouvertLe: M.aujourdhui() },
-      { id: 'b2', description: 'Variateur 15 kW non livré', gravite: 2,
-        debloqueur: 'ATELIER', action: 'Expédier le variateur depuis l\'atelier', echeance: 'avant jeudi',
+      { id: 'b2', description: 'Voyant de défaut du pupitre 2 à remplacer', gravite: 3,
+        debloqueur: 'ATELIER', action: 'Envoyer un voyant avec le prochain déplacement', echeance: 'cette semaine',
         statut: 'OUVERT', ouvertLe: M.aujourdhui() }
     ];
     j.materiel = [
-      { id: 'm1', designation: 'Variateur 15 kW ATV320', reference: 'ATV320U15N4B',
-        etat: 'MANQUANT', qte: 1, besoinLe: M.aujourdhui() }
+      { id: 'm1', designation: 'Voyant de défaut 24 V (pupitre 2)', reference: 'XB4BVM5',
+        etat: 'MANQUANT', qte: 2, besoinLe: M.aujourdhui() }
     ];
     j.securite = { incidents: [], remarques: 'Aucun incident. Port des EPI conforme.', renseigne: true };
     j.essais = [
@@ -165,12 +167,14 @@ async function ecrans() {
       ]
     };
     j.prevuDemain = {
-      taches: ['Fin raccordement presse 3', 'Démarrage variateur 15 kW', 'Reprise essai à blanc'],
-      effectif: 3, besoins: ['Accès zone production dès 8 h', 'Variateur 15 kW']
+      taches: ['Reprise du moteur M4 avec le mécanicien', 'Essai à blanc complet',
+               'Début de la formation des conducteurs'],
+      effectif: 2, besoins: ['Accès zone presse entre 12 h et 14 h']
     };
-    j.synthese = "Journée correcte malgré l'attente de consignation. Armoire AP3 en place, puissance "
-      + 'câblée et repérée. Le variateur manquant bloque le démarrage du moteur M1 : essai à blanc '
-      + 'partiel, contre-visite nécessaire après remplacement.';
+    j.synthese = "Bonne journée de mise en route : les entrées-sorties sont conformes et le cycle de "
+      + 'démarrage tient en essai à blanc. Le moteur M4 tourne à l\'envers (à reprendre avec le '
+      + 'mécanicien). L\'accès à la zone presse a été refusé en fin de journée : l\'essai à blanc '
+      + 'complet est reporté à demain.';
 
     A.etat.chantiers = [ch]; A.etat.journees = [j]; A.etat.photosCache = {};
 
@@ -179,13 +183,25 @@ async function ecrans() {
      "Essai des arrêts d'urgence", 'Contrôle du sens de rotation moteur',
      'Contrôle de la continuité des masses et de la terre']
       .forEach((v) => U.enregistrer('essai.libelle', v));
-    ['Montage support moteur', 'Armoire et habillage'].forEach((v) => U.enregistrer('tache.libelle', v));
+    ['Contrôle des entrées-sorties', 'Contrôle du sens de rotation des moteurs',
+     'Essai à blanc avec l\'équipe', 'Paramétrage des variateurs']
+      .forEach((v) => U.enregistrer('tache.libelle', v));
 
     A.aller('accueil');
   }, DONNEES);
   await new Promise((r) => setTimeout(r, 900));
   await page.screenshot({ path: path.join(OUT, 'ecran-accueil.png') });
   console.log('  écran accueil');
+
+  /* écran de création : le choix de la phase des travaux */
+  await page.evaluate(() => {
+    window.App.etat.nouveau = { phase: 'MISE_EN_ROUTE', effectifPrevu: 2, dureePrevueJours: 5,
+      dateDebutPrevue: window.Modele.aujourdhui(), client: {}, contacts: {}, contraintes: {} };
+    window.App.aller('nouveau');
+  });
+  await new Promise((r) => setTimeout(r, 700));
+  await page.screenshot({ path: path.join(OUT, 'ecran-nouveau-chantier.png') });
+  console.log('  écran nouveau chantier (phases)');
 
   const vues = [
     ['journee', () => window.App.aller('journee', { chantierId: window.App.etat.chantiers[0].id, journeeId: window.App.etat.journees[0].id })],

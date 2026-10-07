@@ -465,12 +465,80 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
 
   /* ============================= Référentiels ========================== */
 
-  var TYPES = [
-    { id: 'INSTALLATION', libelle: 'Installation' },
-    { id: 'MISE_EN_SERVICE', libelle: 'Mise en service' },
-    { id: 'FORMATION', libelle: 'Formation' },
-    { id: 'MIXTE', libelle: 'Mixte (installation + formation)' }
+  /* ======================= Phase des travaux ===========================
+     Une affaire se déroule en phases : elles ne font pas appel aux mêmes
+     métiers, ne se suivent pas au même rythme, et n'attendent pas les mêmes
+     documents. Le chef de chantier choisit la phase en cours à la création,
+     puis la fait avancer d'un geste quand l'équipe change (« Phase suivante »
+     sur la fiche du chantier). Chaque journée retient la phase dans laquelle
+     elle a été travaillée : le point du soir dit donc toujours ce qui était
+     en cours ce jour-là, même si l'affaire a avancé depuis. */
+  var PHASES = [
+    {
+      id: 'INSTALLATION',
+      libelle: 'Installation mécanique',
+      court: 'Installation',
+      icone: 'cle',
+      equipe: 'Mécanicien — un câbleur en renfort selon les cas',
+      metiers: ['Mécanicien', 'Câbleur'],
+      resume: 'Montage mécanique, puis raccordements : électricité, air comprimé, réseau informatique et eau selon les cas.',
+      suite: 'MISE_EN_ROUTE'
+    },
+    {
+      id: 'MISE_EN_ROUTE',
+      libelle: 'Mise en route',
+      court: 'Mise en route',
+      icone: 'automate',
+      equipe: 'Automaticien(s) — un mécanicien en renfort pour les réglages',
+      metiers: ['Automaticien', 'Mécanicien'],
+      resume: 'Démarrage de la ligne : entrées-sorties, sens de rotation des moteurs, essais, premières productions allégées, début de la formation des équipes.',
+      suite: 'ACCOMPAGNEMENT'
+    },
+    {
+      id: 'ACCOMPAGNEMENT',
+      libelle: 'Accompagnement',
+      court: 'Accompagnement',
+      icone: 'reunion',
+      equipe: 'Automaticien, le plus souvent seul',
+      metiers: ['Automaticien'],
+      resume: 'La ligne tourne et le client est autonome : nous restons sur site pour prendre en compte ses problèmes et ses besoins.',
+      suite: null
+    }
   ];
+
+  var PHASE_DEFAUT = 'INSTALLATION';
+
+  function phaseValide(id) {
+    return PHASES.some(function (p) { return p.id === id; }) ? id : PHASE_DEFAUT;
+  }
+
+  /* Les affaires créées avant les phases portaient un « type » : on le
+     traduit une fois pour toutes. */
+  function phaseDepuisType(t) {
+    if (t === 'MISE_EN_SERVICE') return 'MISE_EN_ROUTE';
+    if (t === 'FORMATION') return 'ACCOMPAGNEMENT';
+    return PHASE_DEFAUT;
+  }
+
+  /* Phase d'un chantier (les données anciennes sont acceptées telles quelles) */
+  function phaseDe(chantier) {
+    if (!chantier) return PHASE_DEFAUT;
+    if (chantier.phase && PHASES.some(function (p) { return p.id === chantier.phase; })) return chantier.phase;
+    if (chantier.type) return phaseDepuisType(chantier.type);
+    return PHASE_DEFAUT;
+  }
+
+  function phase(chantier) { return parId(PHASES, phaseDe(chantier)); }
+
+  /* Phase dans laquelle une journée a été travaillée : elle est figée sur la
+     journée, de sorte qu'un point du soir reste fidèle au jour qu'il décrit,
+     même si l'affaire est passée à la phase suivante depuis. */
+  function phaseJournee(journee, chantier) {
+    if (journee && journee.phase && PHASES.some(function (p) { return p.id === journee.phase; })) return journee.phase;
+    return phaseDe(chantier);
+  }
+
+  function suitePhase(id) { var p = parId(PHASES, phaseValide(id)); return p ? p.suite : null; }
 
   var STATUTS = [
     { id: 'PREVU', libelle: 'Prévu', couleur: '#64748b' },
@@ -571,23 +639,68 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
   ];
 
   /* Tâches de chantier les plus courantes */
-  var CATALOGUE_TACHES = [
-    'Préparation du poste de travail et des outillages',
-    'Déchargement et mise en place du matériel',
-    'Montage mécanique de l\'ensemble',
-    'Raccordement des tubes et flexibles',
-    'Tirage et raccordement des câbles',
-    'Raccordement de l\'armoire électrique',
-    'Raccordement pneumatique',
-    'Paramétrage des variateurs',
-    'Programmation de l\'automate',
-    'Essais à blanc avec l\'équipe',
-    'Essais en production avec le client',
-    'Nettoyage et remise en ordre du chantier',
-    'Formation des opérateurs',
-    'Réunion de chantier avec le client',
-    'Levée des réserves'
-  ];
+  /* Tâches proposées selon la phase : ce sont celles que l'équipe en place
+     fait réellement. La saisie libre reste possible (choix « Autre »), et la
+     mémoire d'usage remonte les tâches habituelles de chacun. */
+  var CATALOGUE_TACHES_PHASE = {
+    INSTALLATION: [
+      'Préparation du poste de travail et des outillages',
+      'Déchargement et mise en place du matériel',
+      'Montage mécanique de l\'ensemble',
+      'Alignement, calage et fixation au sol',
+      'Montage des protecteurs et carters',
+      'Raccordement des tubes et flexibles',
+      'Raccordement air comprimé',
+      'Raccordement eau / fluides',
+      'Tirage et raccordement des câbles',
+      'Raccordement de l\'armoire électrique',
+      'Mise à la terre et continuité des masses',
+      'Connexions réseau / informatique',
+      'Repérage et étiquetage',
+      'Nettoyage et remise en ordre du chantier',
+      'Réunion de chantier avec le client'
+    ],
+    MISE_EN_ROUTE: [
+      'Mise sous tension et contrôles de sécurité',
+      'Contrôle des entrées-sorties',
+      'Contrôle du sens de rotation des moteurs',
+      'Paramétrage des variateurs',
+      'Programmation de l\'automate',
+      'Réglages mécaniques avec le mécanicien',
+      'Essais à blanc avec l\'équipe',
+      'Premières productions allégées',
+      'Essais en production avec le client',
+      'Début de la formation des équipes',
+      'Formation des opérateurs',
+      'Réunion de chantier avec le client'
+    ],
+    ACCOMPAGNEMENT: [
+      'Point avec l\'exploitant sur les problèmes rencontrés',
+      'Analyse d\'un défaut ou d\'un arrêt de ligne',
+      'Réglage fin / optimisation',
+      'Modification du programme',
+      'Formation complémentaire des opérateurs',
+      'Formation maintenance / dépannage',
+      'Demande d\'amélioration transmise au bureau d\'études',
+      'Levée des réserves',
+      'Réunion de chantier avec le client'
+    ]
+  };
+
+  /* Catalogue complet (toutes phases) — sert de repli et à la documentation */
+  var CATALOGUE_TACHES = (function () {
+    var out = [];
+    PHASES.forEach(function (p) {
+      (CATALOGUE_TACHES_PHASE[p.id] || []).forEach(function (t) {
+        if (out.indexOf(t) === -1) out.push(t);
+      });
+    });
+    return out;
+  })();
+
+  function tachesPhase(id) {
+    return CATALOGUE_TACHES_PHASE[phaseValide(id)] || CATALOGUE_TACHES;
+  }
 
   var RESULTATS_ESSAI = [
     { id: 'OK', libelle: 'OK', couleur: '#1c8676', fond: '#e7f2ef' },
@@ -632,27 +745,30 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
   var MODELES = [
     {
       id: 'installation',
-      libelle: 'Installation neuve (armoire + machine)',
-      type: 'INSTALLATION',
+      libelle: 'Installation mécanique (montage + raccordements)',
+      phase: 'INSTALLATION',
       dureeJours: 8,
+      effectifPrevu: 2,
       equipements: [],
       contraintes: 'Accès zone production soumis à autorisation. Coupure d\'énergie à demander la veille.'
     },
     {
-      id: 'mise_en_service',
-      libelle: 'Mise en service / retrofit',
-      type: 'MISE_EN_SERVICE',
+      id: 'mise_en_route',
+      libelle: 'Mise en route (démarrage, entrées-sorties, essais)',
+      phase: 'MISE_EN_ROUTE',
       dureeJours: 5,
+      effectifPrevu: 2,
       equipements: [],
-      contraintes: 'Machine disponible en dehors des heures de production.'
+      contraintes: 'Machine disponible en dehors des heures de production pour les essais.'
     },
     {
-      id: 'formation',
-      libelle: 'Formation des équipes client',
-      type: 'FORMATION',
-      dureeJours: 2,
+      id: 'accompagnement',
+      libelle: 'Accompagnement sur site (ligne en production)',
+      phase: 'ACCOMPAGNEMENT',
+      dureeJours: 3,
+      effectifPrevu: 1,
       equipements: [],
-      contraintes: 'Salle ou atelier client à prévoir. Participants libérés par la production.'
+      contraintes: 'Interventions à caler avec l\'exploitant, sans arrêter la production.'
     }
   ];
 
@@ -738,7 +854,7 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
       id: uid('ch'),
       numeroAffaire: d.numeroAffaire || '',
       libelle: d.libelle || '',
-      type: d.type || (modele ? modele.type : 'INSTALLATION'),
+      phase: phaseValide(d.phase || (modele && modele.phase) || phaseDepuisType(d.type)),
       statut: 'PREVU',
       client: Object.assign({ nom: '', ville: '', adresse: '', site: '', logo: '' }, d.client || {}),
       contacts: Object.assign({ referent: '', fonction: '', tel: '', email: '', securite: '' }, d.contacts || {}),
@@ -759,7 +875,8 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
       contraintes: Object.assign({
         horaires: '', acces: '', securite: '', consignes: ''
       }, d.contraintes || {}),
-      equipe: d.equipe || '',                 // chefs de chantier / monteurs prévus (texte libre)
+      equipe: d.equipe || '',                 // composition prévue de l'équipe (texte libre)
+      phaseHistorique: [],                   // [{ phase, le }] : trace des changements de phase
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -937,6 +1054,7 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
       essais: [],
       coactivite: [],
       formation: null,
+      phase: phaseDe(chantier),
       prevuDemain: { taches: [], effectif: null, besoins: [] },
       synthese: '',
       statut: 'OUVERTE',
@@ -987,6 +1105,8 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
   function normaliserChantier(ch) {
     if (!ch) return ch;
     var base = Object.assign({}, ch);
+    /* affaires créées avant les phases : on rattache la phase au type d'alors */
+    base.phase = phaseDe(ch);
     var src = ch.responsables || {};
     var out = {};
     ROLES_RESPONSABLES.forEach(function (r) { out[r.role] = normaliserResponsable(src[r.role]); });
@@ -1085,6 +1205,7 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
     lignes.push('');
     lignes.push('Point du soir du chantier ' + (chantier.numeroAffaire || '') + ' — ' + chantier.libelle +
       (chantier.client && chantier.client.nom ? ' (' + chantier.client.nom + (chantier.client.ville ? ', ' + chantier.client.ville : '') + ')' : '') + '.');
+    lignes.push('Phase en cours : ' + libelle(PHASES, phaseDe(chantier)) + ' — ' + (phase(chantier).equipe || '') + '.');
     lignes.push('Journée ' + journee.numero + (chantier.dureePrevueJours ? ' sur ' + chantier.dureePrevueJours + ' prévues' : '') +
       '. Avancement global : ' + chantier_avancement + ' %' + (ctx && ctx.variation ? ' (' + (ctx.variation > 0 ? '+' : '') + ctx.variation + ' points)' : '') + '.');
     lignes.push('Effectif du jour : ' + (journee.effectif.nb || 0) + ' personne(s) — ' + texteHeuresDec(c.hommesHeures) +
@@ -1167,11 +1288,14 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
 
   var Api = {
     /* référentiels */
-    TYPES: TYPES, STATUTS: STATUTS, ACTIVITES: ACTIVITES, CATEGORIES: CATEGORIES,
+    PHASES: PHASES, phaseDe: phaseDe, phase: phase, phaseJournee: phaseJournee, suitePhase: suitePhase,
+    phaseValide: phaseValide, phaseDepuisType: phaseDepuisType,
+    STATUTS: STATUTS, ACTIVITES: ACTIVITES, CATEGORIES: CATEGORIES,
     GRAVITES: GRAVITES, DEBLOQUEURS: DEBLOQUEURS, ETATS_TACHE: ETATS_TACHE,
     ETATS_MATERIEL: ETATS_MATERIEL, RESULTATS_ESSAI: RESULTATS_ESSAI, ACQUIS: ACQUIS,
     TYPES_FORMATION: TYPES_FORMATION, JALONS_DEFAUT: JALONS_DEFAUT, MODELES: MODELES,
     CATALOGUE_ESSAIS: CATALOGUE_ESSAIS, CATALOGUE_TACHES: CATALOGUE_TACHES,
+    CATALOGUE_TACHES_PHASE: CATALOGUE_TACHES_PHASE, tachesPhase: tachesPhase,
     /* utilitaires */
     parId: parId, libelle: libelle, icone: icone, uid: uid, vide: vide,
     minutes: minutes, texteHeures: texteHeures, texteHeuresDec: texteHeuresDec,
@@ -3454,6 +3578,8 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
     sous.push(M.texteDate(j.date));
     if (ctx.auteur) sous.push('Établi par : ' + ctx.auteur);
     ligne(doc, sous.join('   ·   '), { size: 8.4, color: GRIS });
+    var phJour = M.parId(M.PHASES, M.phaseJournee(j, ch));
+    ligne(doc, 'Phase : ' + phJour.libelle + ' — ' + phJour.equipe, { size: 8.4, color: ARDOISE, bold: true });
     if (j.version > 1) ligne(doc, 'Version ' + j.version + ' (corrigée après envoi)', { size: 8, color: ARDOISE, bold: true });
 
     /* ------------------------- l'essentiel ---------------------------- */
@@ -3864,7 +3990,8 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
       return '<button type="button" class="carte" data-a="ouvrir-chantier" data-id="' + ch.id + '">' +
         '<div class="ligne"><div class="gras">' + U.esc(ch.libelle || 'Chantier') + '</div>' + statutTag(ch.statut) + '</div>' +
         '<div class="petit">' + U.esc((ch.numeroAffaire ? ch.numeroAffaire + ' · ' : '') + (ch.client && ch.client.ville ? ch.client.ville : '')) +
-          ' · J' + A.joursEcoules(ch) + '/' + (ch.dureePrevueJours || '?') + ' prévues</div>' +
+          ' · J' + A.joursEcoules(ch) + '/' + (ch.dureePrevueJours || '?') + ' prévues · ' +
+          U.esc(M.phase(ch).court) + '</div>' +
         barre(av) +
         '<div class="ligne petit"><span>' + I('avancement', 15) + ' ' + av + ' %</span>' +
           '<span>' + I('effectif', 15) + ' ' + (ouverte && ouverte.effectif ? ouverte.effectif.nb : ch.effectifPrevu || 0) + ' pers. · ' + U.esc(M.texteHeuresDec(cumul)) + '</span>' +
@@ -3917,9 +4044,18 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
       '<input id="fNumero" data-champ="numeroAffaire" data-cible="nouveau" placeholder="25-0142"></label>' +
       '<label class="champ"><span class="champ-titre">Libellé du chantier *</span>' +
       '<input id="fLibelle" data-champ="libelle" data-cible="nouveau" placeholder="Ligne 3 — installation armoire et mise en service"></label>' +
-      '<label class="champ"><span class="champ-titre">Type</span><select id="fType" data-champ="type" data-cible="nouveau">' +
-      M.TYPES.map(function (t) { return '<option value="' + t.id + '">' + U.esc(t.libelle) + '</option>'; }).join('') +
+      '<label class="champ"><span class="champ-titre">Phase des travaux *</span>' +
+      '<select id="fPhase" data-champ="phase" data-cible="nouveau" data-rendre="1">' +
+      M.PHASES.map(function (p) {
+        return '<option value="' + p.id + '"' + (A.etat.nouveau.phase === p.id ? ' selected' : '') + '>' +
+          U.esc(p.libelle) + '</option>';
+      }).join('') +
       '</select></label>' +
+      (function () {
+        var p = M.phase({ phase: A.etat.nouveau.phase });
+        return '<div class="petit">' + I(p.icone, 14) + ' ' + U.esc(p.resume) + '<br>' +
+          'Équipe : ' + U.esc(p.equipe) + '</div>';
+      })() +
       '</div>';
 
     html += '<div class="carte"><h3 class="carte-titre">' + I('cible', 16) + ' Client et site</h3>' +
@@ -3969,7 +4105,7 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
     var ch = A.chantierCourant();
     if (!ch) return accueil();
     var onglet = A.etat.vue.onglet || 'synthese';
-    var html = entete(ch.libelle || 'Chantier', (ch.numeroAffaire ? ch.numeroAffaire + ' · ' : '') + M.libelle(M.TYPES, ch.type), 'accueil',
+    var html = entete(ch.libelle || 'Chantier', (ch.numeroAffaire ? ch.numeroAffaire + ' · ' : '') + M.libelle(M.PHASES, M.phaseDe(ch)), 'accueil',
       '<button type="button" class="iconbtn" data-a="editer-chantier" data-id="' + ch.id + '" aria-label="Modifier">' + I('crayon', 18) + '</button>');
 
     html += '<nav class="onglets">' +
@@ -4003,7 +4139,16 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
     var ouverts = M.blocagesOuverts(js, today).filter(function (b) { return b.blocage.statut !== 'LEVE'; });
     var derniere = js.length ? js[js.length - 1] : null;
 
+    var ph = M.phase(ch);
     var html = '<div class="carte">' +
+      '<div class="ligne"><div><div class="gras">' + I(ph.icone, 16) + ' ' + U.esc(ph.libelle) + '</div>' +
+      '<div class="mini">' + U.esc(ph.equipe) + '</div></div>' +
+      (ph.suite ? '<button type="button" class="mini-btn" data-a="phase-suivante">Passer à ' +
+        U.esc(M.libelle(M.PHASES, ph.suite).toLowerCase()) + '</button>' : '') + '</div>' +
+      '<p class="texte petit">' + U.esc(ph.resume) + '</p>' +
+      '</div>';
+
+    html += '<div class="carte">' +
       '<div class="ligne"><span class="petit">' + U.esc((ch.client && ch.client.nom ? ch.client.nom : 'Client non renseigné') +
         (ch.client && ch.client.ville ? ' — ' + ch.client.ville : '')) + '</span>' + statutTag(ch.statut) + '</div>' +
       '<div class="ligne avancement-ligne"><span class="gros-chiffre">' + av + ' %</span>' +
@@ -5020,6 +5165,7 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
 
   function feuilleTache(j, id) {
     var ch = chantier(j.chantierId);
+    var ph = M.phaseJournee(j, ch);   // phase dans laquelle la journée a été travaillée
     var t = id ? (j.taches || []).filter(function (x) { return x.id === id; })[0] : null;
     var neuf = !t;
     t = t || { etat: 'PREVU', avancement: 0 };
@@ -5029,9 +5175,9 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
         libelle: 'Tâche',
         valeur: t.libelle,
         suggestions: 'tache.libelle',
-        catalogue: M.CATALOGUE_TACHES,
+        catalogue: M.tachesPhase(ph),
         titrePopulaires: 'tâches les plus utilisées',
-        titreCatalogue: 'Tâches courantes',
+        titreCatalogue: 'Tâches de la phase — ' + M.libelle(M.PHASES, ph),
         libelleLibre: 'Tâche (saisie libre)',
         dictee: true,
         placeholder: 'Câblage armoire'
@@ -5463,7 +5609,7 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
     'accueil': function () { aller('accueil', { chantierId: etat.vue.chantierId }); },
 
     'nouveau': function () {
-      etat.nouveau = { type: 'INSTALLATION', effectifPrevu: 2, dureePrevueJours: 5, dateDebutPrevue: M.aujourdhui(), client: {}, contacts: {}, contraintes: {} };
+      etat.nouveau = { phase: 'INSTALLATION', effectifPrevu: 2, dureePrevueJours: 5, dateDebutPrevue: M.aujourdhui(), client: {}, contacts: {}, contraintes: {} };
       aller('nouveau');
     },
 
@@ -5471,7 +5617,7 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
       var d = etat.nouveau;
       if (!d.libelle || !String(d.libelle).trim()) { U.toast('Indiquez le libellé du chantier'); return; }
       var ch = M.nouveauChantier({
-        numeroAffaire: d.numeroAffaire, libelle: d.libelle, type: d.type,
+        numeroAffaire: d.numeroAffaire, libelle: d.libelle, phase: d.phase,
         client: d.client, contacts: d.contacts, effectifPrevu: d.effectifPrevu,
         dureePrevueJours: d.dureePrevueJours, dateDebutPrevue: d.dateDebutPrevue,
         dateFinPrevue: d.dateFinPrevue, contraintes: d.contraintes, equipe: d.equipe
@@ -5484,6 +5630,41 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
     },
 
     'ouvrir-chantier': function (el) { aller('fiche', { chantierId: el.getAttribute('data-id'), onglet: 'synthese' }); },
+
+    /* Passer à la phase suivante : l'installation terminée laisse la place à la
+       mise en route, qui laisse elle-même la place à l'accompagnement. Les
+       journées déjà saisies gardent leur phase : rien n'est réécrit. */
+    'phase-suivante': function () {
+      var ch = chantierCourant();
+      if (!ch) return;
+      var actuelle = M.phase(ch);
+      var suivante = actuelle.suite ? M.parId(M.PHASES, actuelle.suite) : null;
+      if (!suivante) { U.toast('Dernière phase de l’affaire', 's'); return; }
+      U.feuille({
+        titre: 'Passer à « ' + suivante.libelle + ' »',
+        contenu: '<p class="texte">Le chantier entre dans la phase « <b>' + U.esc(suivante.libelle) + '</b> » : ' +
+          U.esc(suivante.resume) + '</p>' +
+          '<p class="mini">Équipe attendue : ' + U.esc(suivante.equipe) + '.<br>' +
+          'Les journées déjà saisies gardent leur phase et leurs documents : rien n\'est réécrit. ' +
+          'Les tâches proposées à partir de maintenant sont celles de la mise en route.</p>',
+        boutons: [
+          { libelle: 'Annuler', classe: 's' },
+          {
+            libelle: 'Passer à ' + suivante.court, classe: 'v',
+            action: function (ov, fermer) {
+              fermer();
+              ch.phaseHistorique = (ch.phaseHistorique || []).concat([{ phase: suivante.id, le: new Date().toISOString() }]);
+              ch.phase = suivante.id;
+              if (!ch.dateFinPrevue && suivante.id === 'MISE_EN_ROUTE') { /* rien : dates libres */ }
+              sauverChantier(ch).then(function () {
+                rendre();
+                U.toast('Phase du chantier : ' + suivante.libelle, 'ok');
+              });
+            }
+          }
+        ]
+      });
+    },
 
     /* Adresses de ce chantier : retour aux adresses globales des réglages */
     'adresses-globales': function () {
@@ -6033,6 +6214,18 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
         if (el.getAttribute('data-champ') === 'copieCommercial') setTimeout(rendre, 60);
       }
     }
+    /* le modèle choisi entraîne la phase des travaux (elle reste modifiable) */
+    if (el.id === 'fModele' && etat.nouveau) {
+      var mod = M.parId(M.MODELES, el.value);
+      if (mod && mod.phase) {
+        etat.nouveau.phase = mod.phase;
+        var fp = document.getElementById('fPhase'); if (fp) fp.value = mod.phase;
+        setTimeout(rendre, 60);
+      }
+    }
+    /* la phase choisie affiche aussitôt son résumé et l'équipe attendue */
+    if (el.id === 'fPhase') setTimeout(rendre, 60);
+
     /* remplissage automatique du client depuis la liste importée */
     if (el.id === 'fClient') {
       var clients = (etat.reglages.listes.clients) || [];
@@ -6191,5 +6384,5 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   });
 }
 </script>
-<script>window.CHANTIER_VERSION="90c3f11b7d";window.CHANTIER_DATE="06/10/2026";</script></body>
+<script>window.CHANTIER_VERSION="b540106ce1";window.CHANTIER_DATE="07/10/2026";</script></body>
 </html>

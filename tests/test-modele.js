@@ -153,9 +153,63 @@ egal('nom du fichier PDF', M.nomFichierPoint(chantier, j1), 'Point-soir_25-0142_
 egal('texteDateCourt', M.texteDateCourt('2026-10-07'), '07/10/2026');
 T('texteDate en français', M.texteDate('2026-10-07').startsWith('mercredi 7 octobre'));
 egal('joursEntre', M.joursEntre('2026-10-05', '2026-10-08'), 3);
-const ch2 = M.nouveauChantier({ modeleId: 'mise_en_service' });
-egal('modèle appliqué : type', ch2.type, 'MISE_EN_SERVICE');
+const ch2 = M.nouveauChantier({ modeleId: 'mise_en_route' });
+egal('modèle appliqué : phase', ch2.phase, 'MISE_EN_ROUTE');
 egal('modèle appliqué : durée', ch2.dureePrevueJours, 5);
+
+/* ------------------------------------------------------- phases de travaux */
+/* 1. installation mécanique — 2. mise en route — 3. accompagnement */
+egal('trois phases de travaux', M.PHASES.length, 3);
+egal('phase 1 : installation mécanique', M.PHASES[0].libelle, 'Installation mécanique');
+egal('phase 2 : mise en route', M.PHASES[1].libelle, 'Mise en route');
+egal('phase 3 : accompagnement', M.PHASES[2].libelle, 'Accompagnement');
+T('la phase d\'installation cite l\'électricité, l\'air, le réseau et l\'eau',
+  /électricité/.test(M.PHASES[0].resume) && /air/.test(M.PHASES[0].resume) &&
+  /réseau/.test(M.PHASES[0].resume) && /eau/.test(M.PHASES[0].resume));
+T('la mise en route cite les entrées-sorties et le sens de rotation',
+  /entrées-sorties/.test(M.PHASES[1].resume) && /sens de rotation/.test(M.PHASES[1].resume));
+T('l\'accompagnement parle des problèmes et des besoins du client',
+  /problèmes/.test(M.PHASES[2].resume) && /besoins/.test(M.PHASES[2].resume));
+egal('l\'installation mène à la mise en route', M.PHASES[0].suite, 'MISE_EN_ROUTE');
+egal('la mise en route mène à l\'accompagnement', M.PHASES[1].suite, 'ACCOMPAGNEMENT');
+egal('l\'accompagnement ferme la marche', M.PHASES[2].suite, null);
+egal('métiers de l\'installation', M.PHASES[0].metiers.join(' + '), 'Mécanicien + Câbleur');
+T('métiers de la mise en route (automaticien, mécanicien en renfort)',
+  M.PHASES[1].metiers.indexOf('Automaticien') === 0 && M.PHASES[1].metiers.indexOf('Mécanicien') === 1);
+
+/* chaque phase a son catalogue de tâches, et les tâches de l'installation ne
+   sont pas celles de l'accompagnement */
+T('chaque phase a ses tâches', M.PHASES.every(function (p) { return M.tachesPhase(p.id).length >= 8; }),
+  M.PHASES.map(function (p) { return M.tachesPhase(p.id).length; }).join('/'));
+T('l\'installation prévoit le raccordement air comprimé',
+  M.tachesPhase('INSTALLATION').some(function (t) { return /air comprimé/i.test(t); }));
+T('la mise en route contrôle le sens de rotation des moteurs',
+  M.tachesPhase('MISE_EN_ROUTE').some(function (t) { return /sens de rotation/i.test(t); }));
+T('l\'accompagnement traite les problèmes rencontrés avec l\'exploitant',
+  M.tachesPhase('ACCOMPAGNEMENT').some(function (t) { return /problèmes rencontrés/i.test(t); }));
+T('les tâches de l\'installation et de l\'accompagnement diffèrent',
+  M.tachesPhase('INSTALLATION').filter(function (t) { return M.tachesPhase('ACCOMPAGNEMENT').indexOf(t) !== -1; }).length <= 1);
+T('catalogue complet sans doublon', new Set(M.CATALOGUE_TACHES).size === M.CATALOGUE_TACHES.length,
+  M.CATALOGUE_TACHES.length);
+T('phase inconnue : repli sur l\'installation', M.phaseValide('ZZZ') === 'INSTALLATION');
+egal('ancien type « MISE_EN_SERVICE » lu comme une mise en route',
+  M.phaseDepuisType('MISE_EN_SERVICE'), 'MISE_EN_ROUTE');
+egal('ancien type « FORMATION » lu comme un accompagnement',
+  M.phaseDepuisType('FORMATION'), 'ACCOMPAGNEMENT');
+T('phase d\'un chantier ancien déduite du type', M.phaseDe({ type: 'FORMATION' }) === 'ACCOMPAGNEMENT');
+
+/* La journée retient la phase dans laquelle elle a été travaillée : un point
+   du soir d'installation reste un point d'installation, même après passage
+   en mise en route. */
+const chInst = M.nouveauChantier({ libelle: 'Installation', phase: 'INSTALLATION' });
+const jInst = M.creerJournee(chInst, null, '2026-10-05');
+egal('la journée naît dans la phase du chantier', jInst.phase, 'INSTALLATION');
+const chMr = M.normaliserChantier(M.nouveauChantier({ libelle: 'Mise en route' }));
+chMr.phase = 'MISE_EN_ROUTE';
+egal('passage de phase pris en compte', M.phaseDe(chMr), 'MISE_EN_ROUTE');
+egal('la journée déjà saisie garde sa phase', jInst.phase, 'INSTALLATION');
+T('le mail annonce la phase en cours',
+  /Phase en cours : Mise en route/.test(M.corpsMail(chMr, M.creerJournee(chMr, null, '2026-10-12'), 60, {})));
 T('rappel du jour', M.rappelDuJour([chantier], [j1], j1.date).length >= 0);
 
 /* ------------------------------------------------- catalogues de référence */

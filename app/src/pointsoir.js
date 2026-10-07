@@ -141,6 +141,8 @@
     sous.push(M.texteDate(j.date));
     if (ctx.auteur) sous.push('Établi par : ' + ctx.auteur);
     ligne(doc, sous.join('   ·   '), { size: 8.4, color: GRIS });
+    var phJour = M.parId(M.PHASES, M.phaseJournee(j, ch));
+    ligne(doc, 'Phase : ' + phJour.libelle + ' — ' + phJour.equipe, { size: 8.4, color: ARDOISE, bold: true });
     if (j.version > 1) ligne(doc, 'Version ' + j.version + ' (corrigée après envoi)', { size: 8, color: ARDOISE, bold: true });
 
     /* ------------------------- l'essentiel ---------------------------- */

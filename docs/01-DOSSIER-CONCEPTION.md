@@ -72,6 +72,35 @@
 - **Hors connexion** complet, **sauvegarde JSON**, historique des chantiers.
 - **Multi-langue** des libellés du PDF (héritage BFR-Report) pour les chantiers hors France.
 
+### 2.1 bis Les trois phases de travaux
+
+Une affaire d'installation ne se déroule pas d'un seul tenant : les métiers changent, les
+problèmes changent, et le point du soir ne dit pas la même chose selon le moment. L'application
+distingue donc **trois phases**, choisies à la création du chantier et suivies d'un bout à
+l'autre de l'affaire.
+
+| Phase | Qui est sur site | Ce qu'on y fait | Suivant |
+|---|---|---|---|
+| **Installation mécanique** | un **mécanicien**, avec un **câbleur** en renfort selon les cas | montage mécanique, puis raccordements : **électricité, air comprimé, réseau informatique et eau** selon les cas | → Mise en route |
+| **Mise en route** | un ou des **automaticiens**, avec un **mécanicien** pour les réglages | démarrage de la ligne : entrées-sorties, sens de rotation des moteurs, essais, **premières productions allégées**, début de la **formation des équipes** | → Accompagnement |
+| **Accompagnement** | l'équipe technique, le plus souvent **seule** | la ligne tourne et le client est autonome : nous restons sur site pour prendre en compte **ses problèmes et ses besoins** | — fin d'affaire |
+
+Deux conséquences pratiques :
+
+- **Les tâches proposées suivent la phase.** En installation, la liste déroulante parle de
+  montage, de tubes, de câbles, d'air comprimé et de mise à la terre ; en mise en route, de
+  mise sous tension, d'entrées-sorties, de sens de rotation et d'essais à blanc ; en
+  accompagnement, de points avec l'exploitant, d'analyse de défaut et de réglages fins.
+  La saisie libre reste possible, et la mémoire d'usage continue de remonter les habitudes
+  de chacun.
+- **Chaque journée retient sa phase.** Passer en mise en route ne transforme pas les journées
+  déjà saisies : leur phase est **figée sur la journée**, et les documents produits (points du
+  soir, CR) restent fidèles au jour qu'ils décrivent. Le point du soir porte la mention
+  « Phase : … » et l'équipe attendue.
+
+Le changement de phase se fait depuis la fiche du chantier, en un geste (« Passer à … »), et
+il est **tracé** (date et heure) : on sait quand l'affaire a changé de main.
+
 ### 2.2 Hors périmètre de la v1 (feuille de route)
 - Tableau de bord web partagé entre responsables (§ 15.1).
 - Chiffrage / facturation des heures et des fournitures sur le chantier.
@@ -89,7 +118,7 @@ L'application n'a **ni compte ni mot de passe** : chaque téléphone est autonom
 
 | | |
 |---|---|
-| **Qui** | Le chef de chantier (ou le monteur qui mène l'affaire), présent sur site |
+| **Qui** | Le chef de chantier (ou le monteur qui mène l'affaire), présent sur site — **il change de métier au fil de l'affaire** : mécanicien et câbleur en installation, automaticien en mise en route, technicien d'accompagnement ensuite (§ 2.1 bis) |
 | **Ce qu'il fait** | Ouvre et clôture la journée, saisit les tâches, les actions et photos, les blocages, le matériel, la sécurité, les essais, les sessions de formation |
 | **Ce qu'il ne saisit pas** | **Aucun détail nominatif** : ni la liste des compagnons, ni les heures individuelles. Il indique seulement l'**effectif présent** (nombre de personnes, et si utile la répartition par corps de métier) et les **heures de la journée**. Le suivi individuel des heures reste au pointage |
 | **Pourquoi c'est plus simple** | Une seule saisie par chantier au lieu d'une par personne ; l'application reste rapide, et personne n'a à « faire ses heures » sur son téléphone |
@@ -142,7 +171,7 @@ Le chantier se déroule en **journées**, et chaque journée suit le même cycle
 
 | Bloc | Champs |
 |---|---|
-| **Identification** | N° d'affaire (ex. `25-0142`, généré ou saisi), référence devis/commande, libellé du chantier, type : **Installation · Mise en service · Formation · Mixte**, statut : *Prévu · En cours · En attente · Suspendu · Réceptionné · Clôturé* |
+| **Identification** | N° d'affaire (ex. `25-0142`, généré ou saisi), référence devis/commande, libellé du chantier, **phase : Installation mécanique · Mise en route · Accompagnement** (voir § 2.1 bis), statut : *Prévu · En cours · En attente · Suspendu · Réceptionné · Clôturé* |
 | **Client** | Nom, ville, adresse du site, lieu d'intervention précis (bâtiment, ligne, atelier), logo (facultatif) — **autocomplétion sur 3 lettres** depuis la liste clients importée (reprise de `clients.js`) |
 | **Contacts** | Référent technique sur site (nom, fonction, téléphone), contact réception/mail, contact sécurité si différent |
 | **Équipements** | Liste des machines concernées : désignation, modèle, n° de série, quantité, emplacement *(reprise du principe « multi-machines » du SAV)* |
@@ -161,6 +190,7 @@ Le chantier se déroule en **journées**, et chaque journée suit le même cycle
 |---|---|
 | **Horaires** | Heure d'arrivée / de départ (horodatées par le chrono), pauses, **heures sur site**, **heures productives**, heures supplémentaires. Mode multi-jours rétroactif (comme le SAV) pour régulariser une journée oubliée. |
 | **Effectif et heures** | Nombre de personnes présentes (et répartition par corps de métier si utile), heure d'arrivée / de départ. **Le total hommes-heures du jour et le cumul du chantier sont calculés.** Absents ou prévus non venus (avec motif). **Aucun nominatif.** |
+| **Phase** | La phase des travaux dans laquelle la journée a été travaillée (figée à l'ouverture, recopiée du chantier) — elle ne change plus ensuite |
 | **Conditions** | Météo / conditions d'accès (facultatif, une ligne) : *« site fermé le matin »*, *« production en cours »*. |
 | **Tâches du jour** | Chaque tâche : intitulé, jalon concerné, **état** (réalisée · partielle · non réalisée), **avancement apporté** (en points de %) sur le jalon, heures passées, difficulté rencontrée. |
 | **Actions / évènements** | Journal horodaté des faits marquants — **assistant en 4 étapes** (voir § 6.3). |
@@ -376,6 +406,7 @@ Après envoi : la journée est **verrouillée** (modifiable en la rouvrant expli
 | # | Rubrique | Source | Affichée si |
 |---|---|---|---|
 | — | **En-tête** : logo BFR, *Point du soir — {libellé chantier}*, n° affaire, client + ville, date, **J{n} sur {total prévu}**, auteur (chef de chantier), n° de version | chantier + journée | toujours |
+| 0 | **Identification** : n° d'affaire, libellé, client et ville, journée, date, auteur — **et la phase des travaux** avec l'équipe attendue | chantier | toujours |
 | 1 | **L'essentiel** (synthèse 3-5 lignes, encadré) | saisie du soir | toujours |
 | 2 | **Avancement** : barre globale %, variation depuis la veille, jalons terminés / en cours / à venir | calcul | toujours |
 | 3 | **Effectif et heures** : nombre de personnes présentes, heures sur site, heures de la journée, total **hommes-heures** du jour et cumul chantier | journée | toujours |
@@ -437,6 +468,7 @@ Objet :   [25-0142] Point du soir J4 — Client Exemple Bourges — 7 octobre 20
 Corps :   Bonjour,
 
           Point du soir du chantier 25-0142 — Ligne 3 (Client Exemple, Bourges).
+          Phase en cours : Mise en route — Automaticien(s), un mécanicien en renfort pour les réglages.
           Journée 4 sur 8 prévues. Avancement global : 72 % (+10 points).
           Effectif du jour : 3 personnes — 24 h 00 (cumul chantier : 90 h 00)
 
@@ -554,8 +586,8 @@ BFR-Chantier/
 | Lot | Contenu | Livrable vérifiable |
 |---|---|---|
 | **L0 — Socle** (0,5 j) | `build.py`, charte, PWA, service worker, stockage, navigation, réglages, identité du chef de chantier, sauvegarde JSON | L'application s'installe, se lance hors connexion, mémorise les réglages |
-| **L1 — Chantiers** (1 j) | Liste, création (modèle), fiche chantier, client par autocomplétion, équipements, effectif, jalons & pondérations, statuts | Créer un chantier complet, le retrouver, l'archiver |
-| **L2 — Journée** (1,5 j) | Ouverture/clôture, chrono, effectif/heures, tâches, actions (assistant 4 étapes), photos annotées, blocages avec gravité et responsable, matériel, sécurité, essais | Saisir une journée complète sur le terrain, tout est conservé |
+| **L1 — Chantiers** (1 j) | Liste, création (modèle), **phase des travaux** (installation mécanique / mise en route / accompagnement, avec passation et tracé), fiche chantier, client par autocomplétion, équipements, effectif, jalons & pondérations, statuts | Créer un chantier complet, le retrouver, l'archiver |
+| **L2 — Journée** (1,5 j) | Ouverture/clôture, chrono, effectif/heures, **phase figée sur la journée** et tâches proposées selon la phase, actions (assistant 4 étapes), photos annotées, blocages avec gravité et responsable, matériel, sécurité, essais | Saisir une journée complète sur le terrain, tout est conservé |
 | **L3 — Point du soir** (1,5 j) | Mise en page PDF, synthèse, avancement calculé, reports automatiques, aperçu, e-mail pré-rempli, règles d'escalade, historique, verrouillage/versionnage | Générer et envoyer un point du soir depuis le téléphone |
 | **L4 — Formation** (1 j) | Sessions, programme coché, participants + signature, CR de formation, feuille de présence, attestations individuelles | Produire les 3 documents de formation |
 | **L5 — Synthèses & finitions** (1 j) | CR de chantier multi-jours, documents du chantier, rappels/notifications, recherche, multi-langue, tests hors connexion | Dossier de chantier complet + mode d'emploi |
@@ -581,7 +613,7 @@ BFR-Chantier/
 | 9 | **Commercial en copie** | **Désactivé par défaut**, activable chantier par chantier | Direction / commercial |
 | 10 | **Attestations** | Modèle à valider (mentions, cachet, signature) — un exemplaire est fourni en exemple | Direction / RH |
 | 11 | **Langues** | Français par défaut ; anglais/néerlandais/allemand sur les chantiers concernés | Chargé d'affaire |
-| 12 | **Modèles de chantier** | 3 modèles à définir : *installation neuve*, *mise en service / retrofit*, *formation seule* | Chef d'atelier |
+| 12 | **Modèles de chantier** | 3 modèles, un par phase : *installation mécanique*, *mise en route*, *accompagnement* | Chef d'atelier |
 
 **Rien de bloquant** : ces points peuvent être ajustés pendant et après le développement, mais les trancher d'abord évite de refaire.
 

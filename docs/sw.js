@@ -3,7 +3,7 @@
    ouverture avec du réseau), puis le cache. Si le réseau met plus de 3,5 s,
    le cache est servi sans attendre. Le nom du cache contient l'empreinte du
    build : chaque publication remplace la précédente. */
-const CACHE = 'bfr-chantier-90c3f11b7d';
+const CACHE = 'bfr-chantier-b540106ce1';
 const FICHIERS = ['./', './index.html', './manifest.json',
   './icon-192.png', './icon-512.png', './favicon.png', './apple-touch-icon.png'];
 const DELAI_RESEAU = 3500;

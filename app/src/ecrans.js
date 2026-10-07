@@ -104,7 +104,8 @@
       return '<button type="button" class="carte" data-a="ouvrir-chantier" data-id="' + ch.id + '">' +
         '<div class="ligne"><div class="gras">' + U.esc(ch.libelle || 'Chantier') + '</div>' + statutTag(ch.statut) + '</div>' +
         '<div class="petit">' + U.esc((ch.numeroAffaire ? ch.numeroAffaire + ' · ' : '') + (ch.client && ch.client.ville ? ch.client.ville : '')) +
-          ' · J' + A.joursEcoules(ch) + '/' + (ch.dureePrevueJours || '?') + ' prévues</div>' +
+          ' · J' + A.joursEcoules(ch) + '/' + (ch.dureePrevueJours || '?') + ' prévues · ' +
+          U.esc(M.phase(ch).court) + '</div>' +
         barre(av) +
         '<div class="ligne petit"><span>' + I('avancement', 15) + ' ' + av + ' %</span>' +
           '<span>' + I('effectif', 15) + ' ' + (ouverte && ouverte.effectif ? ouverte.effectif.nb : ch.effectifPrevu || 0) + ' pers. · ' + U.esc(M.texteHeuresDec(cumul)) + '</span>' +
@@ -157,9 +158,18 @@
       '<input id="fNumero" data-champ="numeroAffaire" data-cible="nouveau" placeholder="25-0142"></label>' +
       '<label class="champ"><span class="champ-titre">Libellé du chantier *</span>' +
       '<input id="fLibelle" data-champ="libelle" data-cible="nouveau" placeholder="Ligne 3 — installation armoire et mise en service"></label>' +
-      '<label class="champ"><span class="champ-titre">Type</span><select id="fType" data-champ="type" data-cible="nouveau">' +
-      M.TYPES.map(function (t) { return '<option value="' + t.id + '">' + U.esc(t.libelle) + '</option>'; }).join('') +
+      '<label class="champ"><span class="champ-titre">Phase des travaux *</span>' +
+      '<select id="fPhase" data-champ="phase" data-cible="nouveau" data-rendre="1">' +
+      M.PHASES.map(function (p) {
+        return '<option value="' + p.id + '"' + (A.etat.nouveau.phase === p.id ? ' selected' : '') + '>' +
+          U.esc(p.libelle) + '</option>';
+      }).join('') +
       '</select></label>' +
+      (function () {
+        var p = M.phase({ phase: A.etat.nouveau.phase });
+        return '<div class="petit">' + I(p.icone, 14) + ' ' + U.esc(p.resume) + '<br>' +
+          'Équipe : ' + U.esc(p.equipe) + '</div>';
+      })() +
       '</div>';
 
     html += '<div class="carte"><h3 class="carte-titre">' + I('cible', 16) + ' Client et site</h3>' +
@@ -209,7 +219,7 @@
     var ch = A.chantierCourant();
     if (!ch) return accueil();
     var onglet = A.etat.vue.onglet || 'synthese';
-    var html = entete(ch.libelle || 'Chantier', (ch.numeroAffaire ? ch.numeroAffaire + ' · ' : '') + M.libelle(M.TYPES, ch.type), 'accueil',
+    var html = entete(ch.libelle || 'Chantier', (ch.numeroAffaire ? ch.numeroAffaire + ' · ' : '') + M.libelle(M.PHASES, M.phaseDe(ch)), 'accueil',
       '<button type="button" class="iconbtn" data-a="editer-chantier" data-id="' + ch.id + '" aria-label="Modifier">' + I('crayon', 18) + '</button>');
 
     html += '<nav class="onglets">' +
@@ -243,7 +253,16 @@
     var ouverts = M.blocagesOuverts(js, today).filter(function (b) { return b.blocage.statut !== 'LEVE'; });
     var derniere = js.length ? js[js.length - 1] : null;
 
+    var ph = M.phase(ch);
     var html = '<div class="carte">' +
+      '<div class="ligne"><div><div class="gras">' + I(ph.icone, 16) + ' ' + U.esc(ph.libelle) + '</div>' +
+      '<div class="mini">' + U.esc(ph.equipe) + '</div></div>' +
+      (ph.suite ? '<button type="button" class="mini-btn" data-a="phase-suivante">Passer à ' +
+        U.esc(M.libelle(M.PHASES, ph.suite).toLowerCase()) + '</button>' : '') + '</div>' +
+      '<p class="texte petit">' + U.esc(ph.resume) + '</p>' +
+      '</div>';
+
+    html += '<div class="carte">' +
       '<div class="ligne"><span class="petit">' + U.esc((ch.client && ch.client.nom ? ch.client.nom : 'Client non renseigné') +
         (ch.client && ch.client.ville ? ' — ' + ch.client.ville : '')) + '</span>' + statutTag(ch.statut) + '</div>' +
       '<div class="ligne avancement-ligne"><span class="gros-chiffre">' + av + ' %</span>' +

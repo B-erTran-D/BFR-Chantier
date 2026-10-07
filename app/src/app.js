@@ -416,6 +416,7 @@
 
   function feuilleTache(j, id) {
     var ch = chantier(j.chantierId);
+    var ph = M.phaseJournee(j, ch);   // phase dans laquelle la journée a été travaillée
     var t = id ? (j.taches || []).filter(function (x) { return x.id === id; })[0] : null;
     var neuf = !t;
     t = t || { etat: 'PREVU', avancement: 0 };
@@ -425,9 +426,9 @@
         libelle: 'Tâche',
         valeur: t.libelle,
         suggestions: 'tache.libelle',
-        catalogue: M.CATALOGUE_TACHES,
+        catalogue: M.tachesPhase(ph),
         titrePopulaires: 'tâches les plus utilisées',
-        titreCatalogue: 'Tâches courantes',
+        titreCatalogue: 'Tâches de la phase — ' + M.libelle(M.PHASES, ph),
         libelleLibre: 'Tâche (saisie libre)',
         dictee: true,
         placeholder: 'Câblage armoire'
@@ -859,7 +860,7 @@
     'accueil': function () { aller('accueil', { chantierId: etat.vue.chantierId }); },
 
     'nouveau': function () {
-      etat.nouveau = { type: 'INSTALLATION', effectifPrevu: 2, dureePrevueJours: 5, dateDebutPrevue: M.aujourdhui(), client: {}, contacts: {}, contraintes: {} };
+      etat.nouveau = { phase: 'INSTALLATION', effectifPrevu: 2, dureePrevueJours: 5, dateDebutPrevue: M.aujourdhui(), client: {}, contacts: {}, contraintes: {} };
       aller('nouveau');
     },
 
@@ -867,7 +868,7 @@
       var d = etat.nouveau;
       if (!d.libelle || !String(d.libelle).trim()) { U.toast('Indiquez le libellé du chantier'); return; }
       var ch = M.nouveauChantier({
-        numeroAffaire: d.numeroAffaire, libelle: d.libelle, type: d.type,
+        numeroAffaire: d.numeroAffaire, libelle: d.libelle, phase: d.phase,
         client: d.client, contacts: d.contacts, effectifPrevu: d.effectifPrevu,
         dureePrevueJours: d.dureePrevueJours, dateDebutPrevue: d.dateDebutPrevue,
         dateFinPrevue: d.dateFinPrevue, contraintes: d.contraintes, equipe: d.equipe
@@ -880,6 +881,41 @@
     },
 
     'ouvrir-chantier': function (el) { aller('fiche', { chantierId: el.getAttribute('data-id'), onglet: 'synthese' }); },
+
+    /* Passer à la phase suivante : l'installation terminée laisse la place à la
+       mise en route, qui laisse elle-même la place à l'accompagnement. Les
+       journées déjà saisies gardent leur phase : rien n'est réécrit. */
+    'phase-suivante': function () {
+      var ch = chantierCourant();
+      if (!ch) return;
+      var actuelle = M.phase(ch);
+      var suivante = actuelle.suite ? M.parId(M.PHASES, actuelle.suite) : null;
+      if (!suivante) { U.toast('Dernière phase de l’affaire', 's'); return; }
+      U.feuille({
+        titre: 'Passer à « ' + suivante.libelle + ' »',
+        contenu: '<p class="texte">Le chantier entre dans la phase « <b>' + U.esc(suivante.libelle) + '</b> » : ' +
+          U.esc(suivante.resume) + '</p>' +
+          '<p class="mini">Équipe attendue : ' + U.esc(suivante.equipe) + '.<br>' +
+          'Les journées déjà saisies gardent leur phase et leurs documents : rien n\'est réécrit. ' +
+          'Les tâches proposées à partir de maintenant sont celles de la mise en route.</p>',
+        boutons: [
+          { libelle: 'Annuler', classe: 's' },
+          {
+            libelle: 'Passer à ' + suivante.court, classe: 'v',
+            action: function (ov, fermer) {
+              fermer();
+              ch.phaseHistorique = (ch.phaseHistorique || []).concat([{ phase: suivante.id, le: new Date().toISOString() }]);
+              ch.phase = suivante.id;
+              if (!ch.dateFinPrevue && suivante.id === 'MISE_EN_ROUTE') { /* rien : dates libres */ }
+              sauverChantier(ch).then(function () {
+                rendre();
+                U.toast('Phase du chantier : ' + suivante.libelle, 'ok');
+              });
+            }
+          }
+        ]
+      });
+    },
 
     /* Adresses de ce chantier : retour aux adresses globales des réglages */
     'adresses-globales': function () {
@@ -1429,6 +1465,18 @@
         if (el.getAttribute('data-champ') === 'copieCommercial') setTimeout(rendre, 60);
       }
     }
+    /* le modèle choisi entraîne la phase des travaux (elle reste modifiable) */
+    if (el.id === 'fModele' && etat.nouveau) {
+      var mod = M.parId(M.MODELES, el.value);
+      if (mod && mod.phase) {
+        etat.nouveau.phase = mod.phase;
+        var fp = document.getElementById('fPhase'); if (fp) fp.value = mod.phase;
+        setTimeout(rendre, 60);
+      }
+    }
+    /* la phase choisie affiche aussitôt son résumé et l'équipe attendue */
+    if (el.id === 'fPhase') setTimeout(rendre, 60);
+
     /* remplissage automatique du client depuis la liste importée */
     if (el.id === 'fClient') {
       var clients = (etat.reglages.listes.clients) || [];

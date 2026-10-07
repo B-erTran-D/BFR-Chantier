@@ -17,12 +17,80 @@
 
   /* ============================= Référentiels ========================== */
 
-  var TYPES = [
-    { id: 'INSTALLATION', libelle: 'Installation' },
-    { id: 'MISE_EN_SERVICE', libelle: 'Mise en service' },
-    { id: 'FORMATION', libelle: 'Formation' },
-    { id: 'MIXTE', libelle: 'Mixte (installation + formation)' }
+  /* ======================= Phase des travaux ===========================
+     Une affaire se déroule en phases : elles ne font pas appel aux mêmes
+     métiers, ne se suivent pas au même rythme, et n'attendent pas les mêmes
+     documents. Le chef de chantier choisit la phase en cours à la création,
+     puis la fait avancer d'un geste quand l'équipe change (« Phase suivante »
+     sur la fiche du chantier). Chaque journée retient la phase dans laquelle
+     elle a été travaillée : le point du soir dit donc toujours ce qui était
+     en cours ce jour-là, même si l'affaire a avancé depuis. */
+  var PHASES = [
+    {
+      id: 'INSTALLATION',
+      libelle: 'Installation mécanique',
+      court: 'Installation',
+      icone: 'cle',
+      equipe: 'Mécanicien — un câbleur en renfort selon les cas',
+      metiers: ['Mécanicien', 'Câbleur'],
+      resume: 'Montage mécanique, puis raccordements : électricité, air comprimé, réseau informatique et eau selon les cas.',
+      suite: 'MISE_EN_ROUTE'
+    },
+    {
+      id: 'MISE_EN_ROUTE',
+      libelle: 'Mise en route',
+      court: 'Mise en route',
+      icone: 'automate',
+      equipe: 'Automaticien(s) — un mécanicien en renfort pour les réglages',
+      metiers: ['Automaticien', 'Mécanicien'],
+      resume: 'Démarrage de la ligne : entrées-sorties, sens de rotation des moteurs, essais, premières productions allégées, début de la formation des équipes.',
+      suite: 'ACCOMPAGNEMENT'
+    },
+    {
+      id: 'ACCOMPAGNEMENT',
+      libelle: 'Accompagnement',
+      court: 'Accompagnement',
+      icone: 'reunion',
+      equipe: 'Automaticien, le plus souvent seul',
+      metiers: ['Automaticien'],
+      resume: 'La ligne tourne et le client est autonome : nous restons sur site pour prendre en compte ses problèmes et ses besoins.',
+      suite: null
+    }
   ];
+
+  var PHASE_DEFAUT = 'INSTALLATION';
+
+  function phaseValide(id) {
+    return PHASES.some(function (p) { return p.id === id; }) ? id : PHASE_DEFAUT;
+  }
+
+  /* Les affaires créées avant les phases portaient un « type » : on le
+     traduit une fois pour toutes. */
+  function phaseDepuisType(t) {
+    if (t === 'MISE_EN_SERVICE') return 'MISE_EN_ROUTE';
+    if (t === 'FORMATION') return 'ACCOMPAGNEMENT';
+    return PHASE_DEFAUT;
+  }
+
+  /* Phase d'un chantier (les données anciennes sont acceptées telles quelles) */
+  function phaseDe(chantier) {
+    if (!chantier) return PHASE_DEFAUT;
+    if (chantier.phase && PHASES.some(function (p) { return p.id === chantier.phase; })) return chantier.phase;
+    if (chantier.type) return phaseDepuisType(chantier.type);
+    return PHASE_DEFAUT;
+  }
+
+  function phase(chantier) { return parId(PHASES, phaseDe(chantier)); }
+
+  /* Phase dans laquelle une journée a été travaillée : elle est figée sur la
+     journée, de sorte qu'un point du soir reste fidèle au jour qu'il décrit,
+     même si l'affaire est passée à la phase suivante depuis. */
+  function phaseJournee(journee, chantier) {
+    if (journee && journee.phase && PHASES.some(function (p) { return p.id === journee.phase; })) return journee.phase;
+    return phaseDe(chantier);
+  }
+
+  function suitePhase(id) { var p = parId(PHASES, phaseValide(id)); return p ? p.suite : null; }
 
   var STATUTS = [
     { id: 'PREVU', libelle: 'Prévu', couleur: '#64748b' },
@@ -123,23 +191,68 @@
   ];
 
   /* Tâches de chantier les plus courantes */
-  var CATALOGUE_TACHES = [
-    'Préparation du poste de travail et des outillages',
-    'Déchargement et mise en place du matériel',
-    'Montage mécanique de l\'ensemble',
-    'Raccordement des tubes et flexibles',
-    'Tirage et raccordement des câbles',
-    'Raccordement de l\'armoire électrique',
-    'Raccordement pneumatique',
-    'Paramétrage des variateurs',
-    'Programmation de l\'automate',
-    'Essais à blanc avec l\'équipe',
-    'Essais en production avec le client',
-    'Nettoyage et remise en ordre du chantier',
-    'Formation des opérateurs',
-    'Réunion de chantier avec le client',
-    'Levée des réserves'
-  ];
+  /* Tâches proposées selon la phase : ce sont celles que l'équipe en place
+     fait réellement. La saisie libre reste possible (choix « Autre »), et la
+     mémoire d'usage remonte les tâches habituelles de chacun. */
+  var CATALOGUE_TACHES_PHASE = {
+    INSTALLATION: [
+      'Préparation du poste de travail et des outillages',
+      'Déchargement et mise en place du matériel',
+      'Montage mécanique de l\'ensemble',
+      'Alignement, calage et fixation au sol',
+      'Montage des protecteurs et carters',
+      'Raccordement des tubes et flexibles',
+      'Raccordement air comprimé',
+      'Raccordement eau / fluides',
+      'Tirage et raccordement des câbles',
+      'Raccordement de l\'armoire électrique',
+      'Mise à la terre et continuité des masses',
+      'Connexions réseau / informatique',
+      'Repérage et étiquetage',
+      'Nettoyage et remise en ordre du chantier',
+      'Réunion de chantier avec le client'
+    ],
+    MISE_EN_ROUTE: [
+      'Mise sous tension et contrôles de sécurité',
+      'Contrôle des entrées-sorties',
+      'Contrôle du sens de rotation des moteurs',
+      'Paramétrage des variateurs',
+      'Programmation de l\'automate',
+      'Réglages mécaniques avec le mécanicien',
+      'Essais à blanc avec l\'équipe',
+      'Premières productions allégées',
+      'Essais en production avec le client',
+      'Début de la formation des équipes',
+      'Formation des opérateurs',
+      'Réunion de chantier avec le client'
+    ],
+    ACCOMPAGNEMENT: [
+      'Point avec l\'exploitant sur les problèmes rencontrés',
+      'Analyse d\'un défaut ou d\'un arrêt de ligne',
+      'Réglage fin / optimisation',
+      'Modification du programme',
+      'Formation complémentaire des opérateurs',
+      'Formation maintenance / dépannage',
+      'Demande d\'amélioration transmise au bureau d\'études',
+      'Levée des réserves',
+      'Réunion de chantier avec le client'
+    ]
+  };
+
+  /* Catalogue complet (toutes phases) — sert de repli et à la documentation */
+  var CATALOGUE_TACHES = (function () {
+    var out = [];
+    PHASES.forEach(function (p) {
+      (CATALOGUE_TACHES_PHASE[p.id] || []).forEach(function (t) {
+        if (out.indexOf(t) === -1) out.push(t);
+      });
+    });
+    return out;
+  })();
+
+  function tachesPhase(id) {
+    return CATALOGUE_TACHES_PHASE[phaseValide(id)] || CATALOGUE_TACHES;
+  }
 
   var RESULTATS_ESSAI = [
     { id: 'OK', libelle: 'OK', couleur: '#1c8676', fond: '#e7f2ef' },
@@ -184,27 +297,30 @@
   var MODELES = [
     {
       id: 'installation',
-      libelle: 'Installation neuve (armoire + machine)',
-      type: 'INSTALLATION',
+      libelle: 'Installation mécanique (montage + raccordements)',
+      phase: 'INSTALLATION',
       dureeJours: 8,
+      effectifPrevu: 2,
       equipements: [],
       contraintes: 'Accès zone production soumis à autorisation. Coupure d\'énergie à demander la veille.'
     },
     {
-      id: 'mise_en_service',
-      libelle: 'Mise en service / retrofit',
-      type: 'MISE_EN_SERVICE',
+      id: 'mise_en_route',
+      libelle: 'Mise en route (démarrage, entrées-sorties, essais)',
+      phase: 'MISE_EN_ROUTE',
       dureeJours: 5,
+      effectifPrevu: 2,
       equipements: [],
-      contraintes: 'Machine disponible en dehors des heures de production.'
+      contraintes: 'Machine disponible en dehors des heures de production pour les essais.'
     },
     {
-      id: 'formation',
-      libelle: 'Formation des équipes client',
-      type: 'FORMATION',
-      dureeJours: 2,
+      id: 'accompagnement',
+      libelle: 'Accompagnement sur site (ligne en production)',
+      phase: 'ACCOMPAGNEMENT',
+      dureeJours: 3,
+      effectifPrevu: 1,
       equipements: [],
-      contraintes: 'Salle ou atelier client à prévoir. Participants libérés par la production.'
+      contraintes: 'Interventions à caler avec l\'exploitant, sans arrêter la production.'
     }
   ];
 
@@ -290,7 +406,7 @@
       id: uid('ch'),
       numeroAffaire: d.numeroAffaire || '',
       libelle: d.libelle || '',
-      type: d.type || (modele ? modele.type : 'INSTALLATION'),
+      phase: phaseValide(d.phase || (modele && modele.phase) || phaseDepuisType(d.type)),
       statut: 'PREVU',
       client: Object.assign({ nom: '', ville: '', adresse: '', site: '', logo: '' }, d.client || {}),
       contacts: Object.assign({ referent: '', fonction: '', tel: '', email: '', securite: '' }, d.contacts || {}),
@@ -311,7 +427,8 @@
       contraintes: Object.assign({
         horaires: '', acces: '', securite: '', consignes: ''
       }, d.contraintes || {}),
-      equipe: d.equipe || '',                 // chefs de chantier / monteurs prévus (texte libre)
+      equipe: d.equipe || '',                 // composition prévue de l'équipe (texte libre)
+      phaseHistorique: [],                   // [{ phase, le }] : trace des changements de phase
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -489,6 +606,7 @@
       essais: [],
       coactivite: [],
       formation: null,
+      phase: phaseDe(chantier),
       prevuDemain: { taches: [], effectif: null, besoins: [] },
       synthese: '',
       statut: 'OUVERTE',
@@ -539,6 +657,8 @@
   function normaliserChantier(ch) {
     if (!ch) return ch;
     var base = Object.assign({}, ch);
+    /* affaires créées avant les phases : on rattache la phase au type d'alors */
+    base.phase = phaseDe(ch);
     var src = ch.responsables || {};
     var out = {};
     ROLES_RESPONSABLES.forEach(function (r) { out[r.role] = normaliserResponsable(src[r.role]); });
@@ -637,6 +757,7 @@
     lignes.push('');
     lignes.push('Point du soir du chantier ' + (chantier.numeroAffaire || '') + ' — ' + chantier.libelle +
       (chantier.client && chantier.client.nom ? ' (' + chantier.client.nom + (chantier.client.ville ? ', ' + chantier.client.ville : '') + ')' : '') + '.');
+    lignes.push('Phase en cours : ' + libelle(PHASES, phaseDe(chantier)) + ' — ' + (phase(chantier).equipe || '') + '.');
     lignes.push('Journée ' + journee.numero + (chantier.dureePrevueJours ? ' sur ' + chantier.dureePrevueJours + ' prévues' : '') +
       '. Avancement global : ' + chantier_avancement + ' %' + (ctx && ctx.variation ? ' (' + (ctx.variation > 0 ? '+' : '') + ctx.variation + ' points)' : '') + '.');
     lignes.push('Effectif du jour : ' + (journee.effectif.nb || 0) + ' personne(s) — ' + texteHeuresDec(c.hommesHeures) +
@@ -719,11 +840,14 @@
 
   var Api = {
     /* référentiels */
-    TYPES: TYPES, STATUTS: STATUTS, ACTIVITES: ACTIVITES, CATEGORIES: CATEGORIES,
+    PHASES: PHASES, phaseDe: phaseDe, phase: phase, phaseJournee: phaseJournee, suitePhase: suitePhase,
+    phaseValide: phaseValide, phaseDepuisType: phaseDepuisType,
+    STATUTS: STATUTS, ACTIVITES: ACTIVITES, CATEGORIES: CATEGORIES,
     GRAVITES: GRAVITES, DEBLOQUEURS: DEBLOQUEURS, ETATS_TACHE: ETATS_TACHE,
     ETATS_MATERIEL: ETATS_MATERIEL, RESULTATS_ESSAI: RESULTATS_ESSAI, ACQUIS: ACQUIS,
     TYPES_FORMATION: TYPES_FORMATION, JALONS_DEFAUT: JALONS_DEFAUT, MODELES: MODELES,
     CATALOGUE_ESSAIS: CATALOGUE_ESSAIS, CATALOGUE_TACHES: CATALOGUE_TACHES,
+    CATALOGUE_TACHES_PHASE: CATALOGUE_TACHES_PHASE, tachesPhase: tachesPhase,
     /* utilitaires */
     parId: parId, libelle: libelle, icone: icone, uid: uid, vide: vide,
     minutes: minutes, texteHeures: texteHeures, texteHeuresDec: texteHeuresDec,

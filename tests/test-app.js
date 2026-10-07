@@ -386,8 +386,17 @@ function texteEcran() { return doc.getElementById('app').textContent.replace(/\s
   T('report : la tâche terminée ne revient pas', !libelles.includes('Montage support moteur'));
   T('report : blocage non levé toujours ouvert',
     dom.window.Modele.blocagesOuverts([j], '2026-10-08').length === 1);
+  /* ancienneté comptée depuis la date d'ouverture réelle du blocage : le test
+     ne dépend pas du jour où il tourne */
+  const plus = (n) => {
+    const d = new Date(String(j.blocages[0].ouvertLe || j.date) + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+  T('report : blocage du jour non signalé persistant',
+    dom.window.Modele.blocagesOuverts([j], j.blocages[0].ouvertLe)[0].persistant === false);
   T('report : blocage ancien de 3 jours signalé persistant',
-    dom.window.Modele.blocagesOuverts([j], '2026-10-09')[0].persistant === true);
+    dom.window.Modele.blocagesOuverts([j], plus(3))[0].persistant === true);
 
   /* --- 15. réglages : destinataires et persistance --- */
   App.etat.reglages.responsables.beElectro = { nom: 'M. Ferrand', email: 'be@exemple.fr' };
@@ -617,7 +626,82 @@ function texteEcran() { return doc.getElementById('app').textContent.replace(/\s
   T('aucune couleur hors charte dans les écrans',
     !/#f97316|#f59e0b|#ffedd5|#c2410c|#b45309|#fef3c7/i.test(ecransHTML));
 
-  /* --- 25. aucune erreur d'exécution --- */
+  /* --- 25. phases de travaux : installation, mise en route, accompagnement --- */
+  const Modele = dom.window.Modele;
+  T('le chantier créé démarre en installation mécanique',
+    ch.phase === 'INSTALLATION', String(ch.phase));
+  T('la journée retient sa phase', j.phase === 'INSTALLATION', String(j.phase));
+  App.aller('fiche', { chantierId: ch.id, onglet: 'synthese' });
+  await attente(150);
+  T('la fiche annonce la phase', texteEcran().includes('Installation mécanique'));
+
+  /* les tâches proposées sont celles de la phase */
+  App.aller('journee', { chantierId: ch.id, journeeId: j.id });
+  await attente(200);
+  clic('[data-a="ajouter-tache"]');
+  await attente(250);
+  let choixTaches = [...doc.querySelectorAll('#taLibSel option')].map((o) => o.value);
+  T('tâches de l\'installation proposées : raccordement air comprimé',
+    choixTaches.some((v) => /air comprimé/i.test(v)), choixTaches.length + ' choix');
+  T('les tâches de la mise en route ne sont pas encore proposées',
+    !choixTaches.some((v) => /sens de rotation/i.test(v)));
+  doc.querySelector('.feuille-pied .btn').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  await attente(200);
+
+  /* passage à la phase suivante depuis la fiche du chantier */
+  App.aller('fiche', { chantierId: ch.id, onglet: 'synthese' });
+  await attente(250);
+  T('la fiche propose de passer à la phase suivante',
+    !!doc.querySelector('[data-a="phase-suivante"]'));
+  clic('[data-a="phase-suivante"]');
+  await attente(250);
+  T('la confirmation dit ce qu\'apporte la mise en route',
+    doc.body.textContent.includes('Mise en route') && doc.body.textContent.includes('entrées-sorties'));
+  const boutonsPhase = [...doc.querySelectorAll('.feuille-pied .btn')];
+  boutonsPhase[boutonsPhase.length - 1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  await attente(300);
+  T('le chantier est passé en mise en route', Modele.phaseDe(ch) === 'MISE_EN_ROUTE', String(ch.phase));
+  T('le changement de phase est tracé',
+    (ch.phaseHistorique || []).some((h) => h.phase === 'MISE_EN_ROUTE' && !!h.le));
+
+  /* la nouvelle journée naît dans la nouvelle phase, l'ancienne ne bouge pas */
+  const jour3 = Modele.creerJournee(ch, j, '2026-10-12');
+  T('la journée suivante naît en mise en route', jour3.phase === 'MISE_EN_ROUTE', String(jour3.phase));
+  T('la journée d\'installation garde sa phase', j.phase === 'INSTALLATION');
+
+  /* les tâches proposées deviennent celles de la mise en route */
+  App.etat.journees.push(jour3);
+  dom.window.Store.ecrire(dom.window.Store.ST_JOURNEES, jour3);
+  await attente(150);
+  App.aller('journee', { chantierId: ch.id, journeeId: jour3.id });
+  await attente(250);
+  clic('[data-a="ajouter-tache"]');
+  await attente(250);
+  choixTaches = [...doc.querySelectorAll('#taLibSel option')].map((o) => o.value);
+  T('tâches de la mise en route proposées : contrôle du sens de rotation des moteurs',
+    choixTaches.some((v) => /sens de rotation/i.test(v)));
+  T('tâches de la mise en route proposées : contrôle des entrées-sorties',
+    choixTaches.some((v) => /entrées-sorties/i.test(v)));
+  T('le catalogue porte le nom de la phase',
+    [...doc.querySelectorAll('#taLibSel optgroup')].some((g) => /Mise en route/.test(g.label)));
+  doc.querySelector('.feuille-pied .btn').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  await attente(200);
+
+  /* le point du soir annonce la phase du jour */
+  T('le document du point du soir mentionne la phase',
+    (function () {
+      try {
+        const d = dom.window.PointSoir.document({
+          chantier: ch, journee: jour3, reglages: App.etat.reglages,
+          avancement: 0, cumul: 0, blocagesOuverts: [], photos: [], auteur: 'J. Dupont'
+        });
+        /* le PDF encode les accents en octal : on lit le flux tel quel */
+        const texte = JSON.stringify(d.doc.pages);
+        return /Phase : Mise en route/.test(texte) && /Automaticien/.test(texte);
+      } catch (e) { return false; }
+    })());
+
+  /* --- 26. aucune erreur d'exécution --- */
   T('aucune erreur d\'exécution', erreurs.length === 0, erreurs.slice(0, 3).join(' | '));
 
   console.log('\n' + '='.repeat(60));
