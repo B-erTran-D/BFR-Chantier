@@ -106,18 +106,25 @@ function fermerFeuilles() {
 
   /* --- 1. l'écran d'accueil s'affiche (base vide) --- */
   T('écran d\'accueil rendu', texteEcran().includes('Installation'));
-  /* La marque officielle remplace le titre texte sur l'accueil : image
-     embarquée (donc disponible hors connexion) et identique à la constante
-     de l'application (garde-fou contre une image périmée à la construction). */
+  /* La marque officielle BFR Systems ouvre tous les bandeaux : image embarquée
+     (donc disponible hors connexion) et identique à la constante de
+     l'application (garde-fou contre une image périmée à la construction).
+     Une seule forme, jamais recadrée : un « BFR » seul n'est pas le logo
+     (retour du 7 octobre 2026). */
   const marqueBandeau = doc.querySelector('.topbar-marque');
   T('marque officielle BFR Systems dans le bandeau',
     !!marqueBandeau && /^data:image\/png;base64,/.test(marqueBandeau.getAttribute('src')),
     marqueBandeau ? String(marqueBandeau.getAttribute('src')).slice(0, 22) : 'absente');
   T('marque du bandeau identique à la constante de l\'application',
     !!marqueBandeau && marqueBandeau.getAttribute('src') === dom.window.MARQUE_BFR_TOPBAR);
-  T('marque accessible (nom de l\'application annoncé)',
-    !!marqueBandeau && marqueBandeau.getAttribute('alt') === 'BFR Chantier');
+  T('marque accessible (BFR Systems annoncé)',
+    !!marqueBandeau && marqueBandeau.getAttribute('alt') === 'BFR Systems');
   T('plus de titre texte sur l\'accueil', !doc.querySelector('.topbar-titre'));
+  /* Le défaut signalé : « BFR » puis « BFR SYSTEMS » côte à côte. */
+  T('une seule marque dans le bandeau de l\'accueil',
+    doc.querySelectorAll('header.topbar img').length === 1,
+    doc.querySelectorAll('header.topbar img').length + ' image(s)');
+  T('plus aucune marque recadrée dans l\'application', !doc.querySelector('.topbar-signet'));
   T('invite à créer le premier chantier', texteEcran().includes('Aucun chantier enregistré'));
   T('les outils sont chargés', !!(dom.window.Modele && dom.window.Store && dom.window.PointSoir && dom.window.App));
   T('le module de mémoire d\'usage est chargé', typeof dom.window.Usage === 'object');
@@ -148,20 +155,22 @@ function fermerFeuilles() {
   T('avancement initial 0 %', App.avancementDe(ch) === 0);
   T('écran fiche chantier', texteEcran().includes('Jalons'));
   const titreFiche = doc.querySelector('.topbar-titre');
-  T('fiche chantier : le bandeau garde le titre du chantier, pas le logo complet',
-    !doc.querySelector('.topbar-marque') && !!titreFiche && titreFiche.textContent.indexOf('Ligne 3') === 0,
+  T('fiche chantier : le bandeau garde le titre du chantier',
+    !!titreFiche && titreFiche.textContent.indexOf('Ligne 3') === 0,
     titreFiche ? titreFiche.textContent.slice(0, 30) : 'aucun titre');
-  /* la marque « BFR » seule rappelle l'éditeur sur les écrans de travail */
-  const signetFiche = doc.querySelector('.topbar-signet');
-  T('la marque BFR figure sur la fiche chantier',
-    !!signetFiche && /^data:image\/png;base64,/.test(signetFiche.getAttribute('src')));
-  T('la marque courte est bien une autre image que le logo complet',
-    !!signetFiche && signetFiche.getAttribute('src') === dom.window.MARQUE_BFR_SIGNET &&
-    dom.window.MARQUE_BFR_SIGNET !== dom.window.MARQUE_BFR_TOPBAR);
+  /* la marque officielle ouvre les écrans de travail, avant le titre */
+  const marqueFiche = doc.querySelector('.topbar-marque');
+  T('la marque officielle ouvre le bandeau de la fiche chantier',
+    !!marqueFiche && marqueFiche.getAttribute('src') === dom.window.MARQUE_BFR_TOPBAR);
+  T('la marque précède le titre et le bouton retour',
+    !!marqueFiche && !!titreFiche && !!(marqueFiche.compareDocumentPosition(titreFiche) & 4));
+  T('une seule marque par bandeau',
+    doc.querySelectorAll('header.topbar img').length === 1,
+    doc.querySelectorAll('header.topbar img').length + ' image(s)');
   /* et elle est présente sur les autres écrans de travail */
   App.aller('reglages');
   await attente(250);
-  T('la marque BFR figure sur les réglages', !!doc.querySelector('.topbar-signet'));
+  T('la marque officielle ouvre le bandeau des réglages', !!doc.querySelector('.topbar-marque'));
   App.aller('fiche', { chantierId: ch.id, onglet: 'synthese' });
   await attente(250);
 
@@ -178,7 +187,12 @@ function fermerFeuilles() {
   T('l\'effectif est repris du chantier (3)', j.effectif.nb === 3, 'nb = ' + j.effectif.nb);
 
   /* --- 3 ter. plus de crayon dans le bandeau de la journée --- */
-  T('la marque BFR figure sur la journée', !!doc.querySelector('.topbar-signet'));
+  T('la marque officielle ouvre le bandeau de la journée',
+    !!doc.querySelector('.topbar-marque') &&
+    doc.querySelector('.topbar-marque').getAttribute('src') === dom.window.MARQUE_BFR_TOPBAR);
+  T('bandeau de la journée : une seule marque, et aucune marque recadrée',
+    doc.querySelectorAll('header.topbar img').length === 1, 
+    doc.querySelectorAll('header.topbar img').length + ' image(s)');
   T('le bandeau de la journée garde le titre de la journée',
     !!doc.querySelector('.topbar-titre') && doc.querySelector('.topbar-titre').textContent.indexOf('J1') === 0,
     (doc.querySelector('.topbar-titre') || {}).textContent);
@@ -933,14 +947,17 @@ function fermerFeuilles() {
     /\.champ input\[type="range"\]::-webkit-slider-runnable-track\s*\{[^}]*linear-gradient\(90deg, var\(--bfr-primary\)/.test(feuilleCSS));
   T('le curseur ne reprend pas la bordure des champs',
     /\.champ input\[type="range"\]\s*\{[^}]*border:\s*0/.test(feuilleCSS));
-  T('marque courte dimensionnee par la charte (18 px, non deformee)',
-    /\.topbar-signet\s*\{[^}]*height:\s*18px[^}]*width:\s*auto/.test(feuilleCSS));
-  T('marque dimensionnee par la charte (22 px, non deformee)',
-    /\.topbar-marque\s*\{[^}]*height:\s*22px[^}]*object-fit:\s*contain/.test(feuilleCSS));
+  T('marque dimensionnee par la charte (20 px, non deformee)',
+    /\.topbar-marque\s*\{[^}]*height:\s*20px[^}]*width:\s*auto/.test(feuilleCSS) &&
+    /\.topbar-marque\s*\{[^}]*object-fit:\s*contain/.test(feuilleCSS));
+  T('plus aucune regle de style pour une marque recadree',
+    !/\.topbar-signet\s*\{/.test(feuilleCSS));
   T('sous-titre du bandeau non limite a une fraction de la largeur',
     !/\.topbar-sous\s*\{[^}]*max-width:\s*\d+vw/.test(feuilleCSS));
-  T('marque resserree sur tres petits ecrans',
-    /@media \(max-width: 360px\) \{[^}]*\.topbar-marque\s*\{[^}]*height:\s*20px/.test(feuilleCSS));
+  T('marque resserree sur telephones etroits',
+    /@media \(max-width: 400px\) \{[^}]*\.topbar-marque\s*\{[^}]*height:\s*17px/.test(feuilleCSS));
+  T('marque agrandie au-dela du telephone',
+    /@media \(min-width: 620px\)[\s\S]*?\.topbar-marque\s*\{\s*height:\s*24px/.test(feuilleCSS));
   T('aucune largeur figee en pixels pour les barres',
     !/\.(topbar|barre-bas|onglets)\s*\{[^}]*max-width:\s*\d+px/.test(feuilleCSS));
 

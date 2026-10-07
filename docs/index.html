@@ -127,15 +127,13 @@ h1, h2, h3, h4 { font-family: var(--font-heading); margin: 0; letter-spacing: -.
   box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 1px 12px rgba(31, 28, 69, .18);
 }
 .topbar-gauche { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
-/* rappel de marque « BFR » en tête des écrans de travail (logo complet sur
-   l'accueil) : discret, il ne prend pas la place du nom du chantier */
-.topbar-signet { display: block; height: 18px; width: auto; flex: 0 0 auto; opacity: .92; }
 .topbar-gauche > div { min-width: 0; /* permet le repli du sous-titre, sans deborder du bandeau */ }
 .topbar-titre { font-weight: 600; font-size: 16.5px; letter-spacing: -.015em; }
-/* Marque officielle BFR Systems (logo, variante fond foncé) : même encombrement
-   que le titre qu'elle remplace. Ne jamais recolorer ni déformer le logo :
-   object-fit garantit qu'il n'est pas écrasé si la place manque. */
-.topbar-marque { display: block; height: 22px; width: auto; max-width: 62vw; object-fit: contain; }
+/* Marque officielle BFR Systems (logo complet, variante « fond foncé ») : elle
+   ouvre tous les bandeaux, dans une seule forme. Ne jamais la recolorer, la
+   déformer ni la recadrer : la hauteur donne l'échelle, le rapport est conservé
+   (width: auto), et flex empêche l'écrasement si la place manque. */
+.topbar-marque { display: block; height: 20px; width: auto; flex: 0 0 auto; max-width: 62vw; object-fit: contain; }
 .topbar-sous { font-size: 11.5px; opacity: .72; white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; max-width: 100%; margin-top: 1px; }
 
@@ -401,10 +399,11 @@ button.carte, button.action-ligne, button.tache-ligne, button.jalon-ligne, butto
 }
 .feuille-fond.visible .feuille { transform: translateY(0); }
 .feuille.pleine { max-height: 96vh; }
-/* Très petits écrans (320 px) : la marque et le sous-titre se resserrent
-   d'un cran pour que l'intitulé des phases reste lisible en entier. */
-@media (max-width: 360px) {
-  .topbar-marque { height: 20px; }
+/* Téléphones étroits : la marque se resserre d'un cran pour que le titre de
+   l'écran — « J2 / 4 », le nom du chantier — reste lisible en entier à côté
+   d'elle et du bouton retour. */
+@media (max-width: 400px) {
+  .topbar-marque { height: 17px; }
   .topbar-sous { font-size: 11px; }
 }
 
@@ -488,7 +487,6 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
   .topbar { padding-top: calc(13px + env(safe-area-inset-top)); padding-bottom: 13px; }
   .topbar-titre { font-size: 18px; }
   .topbar-marque { height: 24px; }
-  .topbar-signet { height: 20px; }
   .topbar-sous { font-size: 12.5px; }
   .iconbtn { min-width: 42px; min-height: 42px; border-radius: 13px; }
   .contenu { padding-top: 20px; padding-bottom: 28px; }
@@ -3161,11 +3159,6 @@ window.LOGO_BFR_TOPBAR = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAAw
    python3 outils/preparer-marque.py ; les règles d'usage sont dans
    assets/README.md. */
 window.MARQUE_BFR_TOPBAR = 'data:image/png;base64,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';
-/* Marque « BFR » seule (sans le bloc « SYSTEMS ») : la barre du haut des écrans
-   de travail, où le logo complet ne laisserait plus assez de place au nom du
-   chantier. Même source officielle, recadrée avant le bloc cyan et agrandie
-   x3 par outils/preparer-marque.py. */
-window.MARQUE_BFR_SIGNET = 'data:image/png;base64,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';
 
 </script>
 <script>
@@ -4119,34 +4112,31 @@ window.MARQUE_BFR_SIGNET = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAL0AAA
     return pastille(gr.court, gr.couleur, gr.fond);
   }
 
-  /* Marque officielle BFR Systems : le logo remplace le titre texte sur
-     l'accueil (var. « fond foncé » du logo, prévue pour le bandeau bleu nuit).
-     Les écrans de travail gardent leur titre écrit — nom du chantier, réglages…,
-     plus utile au quotidien qu'un logo. Repli sur le titre si le module de
-     marque n'a pas été chargé (fichier de dépannage incomplet). */
+  /* Marque officielle BFR Systems : une seule forme dans toute l'application,
+     la variante « fond foncé » du logo, telle quelle — jamais recolorée,
+     jamais déformée, jamais recadrée (un « BFR » seul n'est pas le logo).
+     Elle ouvre chaque bandeau ; le titre de l'écran vient ensuite.
+     Repli sur un titre écrit si le module de marque n'a pas été chargé
+     (fichier de dépannage incomplet). */
   function marque() {
     var logo = global.MARQUE_BFR_TOPBAR;
     if (!logo) { return '<div class="topbar-titre">BFR Chantier</div>'; }
-    return '<img class="topbar-marque" src="' + logo + '" alt="BFR Chantier" title="BFR Systems">';
+    return '<img class="topbar-marque" src="' + logo + '" alt="BFR Systems">';
   }
 
-  /* La marque « BFR » seule, rappel discret en tête des écrans de travail :
-     le logo complet n'y tiendrait pas sans rogner le nom du chantier.
-     Absente du fichier de dépannage incomplet : on n'affiche alors rien. */
-  function signet() {
-    var marque = global.MARQUE_BFR_SIGNET;
-    if (!marque) { return ''; }
-    return '<img class="topbar-signet" src="' + marque + '" alt="BFR Systems">';
-  }
-
+  /* Bandeau commun à tous les écrans :
+       · accueil — le logo, et la ligne de métier juste en dessous ;
+       · écran de travail — le logo, le retour, puis le titre de l'écran.
+     Le logo n'apparaît qu'une fois : il ne double jamais un titre. */
   function entete(titre, sous, retour, actionDroite) {
+    var bloc = '<div>' +
+      (titre ? '<div class="topbar-titre">' + U.esc(titre) + '</div>' : marque()) +
+      (sous ? '<div class="topbar-sous">' + U.esc(sous) + '</div>' : '') + '</div>';
+    var gauche = titre
+      ? marque() + (retour ? '<button type="button" class="iconbtn" data-a="' + retour + '" aria-label="Retour">' + I('retour', 20) + '</button>' : '') + bloc
+      : bloc;
     return '<header class="topbar">' +
-      '<div class="topbar-gauche">' +
-        signet() +
-        (retour ? '<button type="button" class="iconbtn" data-a="' + retour + '" aria-label="Retour">' + I('retour', 20) + '</button>' : '') +
-        '<div>' + (titre ? '<div class="topbar-titre">' + U.esc(titre) + '</div>' : marque()) +
-        (sous ? '<div class="topbar-sous">' + U.esc(sous) + '</div>' : '') + '</div>' +
-      '</div>' +
+      '<div class="topbar-gauche">' + gauche + '</div>' +
       (actionDroite || '<button type="button" class="iconbtn" data-a="menu" aria-label="Menu">' + I('menu', 20) + '</button>') +
       '</header>';
   }
@@ -6705,5 +6695,5 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
   });
 }
 </script>
-<script>window.CHANTIER_VERSION="c7dc91aec9";window.CHANTIER_DATE="07/10/2026";</script></body>
+<script>window.CHANTIER_VERSION="a1808d1204";window.CHANTIER_DATE="07/10/2026";</script></body>
 </html>

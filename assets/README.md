@@ -9,12 +9,16 @@ applications affichent exactement la même marque.
 |---|---|---|
 | `logo-bfr-topbar.png` | Logo « BFR SYSTEMS », 200 × 48 px, fond transparent, variante **fond foncé** (lettres blanches, bloc cyan) | bandeau du haut de l'application |
 
-De ce fichier, l'outil tire **deux images** :
+De ce fichier, l'outil tire **une seule image** :
 
 | Constante produite | Contenu | Où elle s'affiche |
 |---|---|---|
-| `MARQUE_BFR_TOPBAR` | le logo complet « BFR SYSTEMS » | écran d'accueil (à la place du titre) |
-| `MARQUE_BFR_SIGNET` | la marque « BFR » seule, avant le bloc « SYSTEMS » | tous les autres bandeaux, avant la flèche de retour |
+| `MARQUE_BFR_TOPBAR` | le logo complet « BFR SYSTEMS », **tel quel** | tous les bandeaux, en tête |
+
+Une marque courte « BFR » (logo recadré avant le bloc cyan) a existé pour les
+écrans de travail ; elle a été **retirée le 7 octobre 2026** : un logo recadré
+n'est pas la marque officielle, et le bandeau n'en portait alors deux d'un coup
+sur l'accueil. Ne pas la réintroduire.
 
 Le fichier `logo-bfr-topbar.png` est la **source** : il sert à produire
 `app/src/marque-bfr.js` (image embarquée dans l'application, pour fonctionner

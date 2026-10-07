@@ -33,34 +33,31 @@
     return pastille(gr.court, gr.couleur, gr.fond);
   }
 
-  /* Marque officielle BFR Systems : le logo remplace le titre texte sur
-     l'accueil (var. « fond foncé » du logo, prévue pour le bandeau bleu nuit).
-     Les écrans de travail gardent leur titre écrit — nom du chantier, réglages…,
-     plus utile au quotidien qu'un logo. Repli sur le titre si le module de
-     marque n'a pas été chargé (fichier de dépannage incomplet). */
+  /* Marque officielle BFR Systems : une seule forme dans toute l'application,
+     la variante « fond foncé » du logo, telle quelle — jamais recolorée,
+     jamais déformée, jamais recadrée (un « BFR » seul n'est pas le logo).
+     Elle ouvre chaque bandeau ; le titre de l'écran vient ensuite.
+     Repli sur un titre écrit si le module de marque n'a pas été chargé
+     (fichier de dépannage incomplet). */
   function marque() {
     var logo = global.MARQUE_BFR_TOPBAR;
     if (!logo) { return '<div class="topbar-titre">BFR Chantier</div>'; }
-    return '<img class="topbar-marque" src="' + logo + '" alt="BFR Chantier" title="BFR Systems">';
+    return '<img class="topbar-marque" src="' + logo + '" alt="BFR Systems">';
   }
 
-  /* La marque « BFR » seule, rappel discret en tête des écrans de travail :
-     le logo complet n'y tiendrait pas sans rogner le nom du chantier.
-     Absente du fichier de dépannage incomplet : on n'affiche alors rien. */
-  function signet() {
-    var marque = global.MARQUE_BFR_SIGNET;
-    if (!marque) { return ''; }
-    return '<img class="topbar-signet" src="' + marque + '" alt="BFR Systems">';
-  }
-
+  /* Bandeau commun à tous les écrans :
+       · accueil — le logo, et la ligne de métier juste en dessous ;
+       · écran de travail — le logo, le retour, puis le titre de l'écran.
+     Le logo n'apparaît qu'une fois : il ne double jamais un titre. */
   function entete(titre, sous, retour, actionDroite) {
+    var bloc = '<div>' +
+      (titre ? '<div class="topbar-titre">' + U.esc(titre) + '</div>' : marque()) +
+      (sous ? '<div class="topbar-sous">' + U.esc(sous) + '</div>' : '') + '</div>';
+    var gauche = titre
+      ? marque() + (retour ? '<button type="button" class="iconbtn" data-a="' + retour + '" aria-label="Retour">' + I('retour', 20) + '</button>' : '') + bloc
+      : bloc;
     return '<header class="topbar">' +
-      '<div class="topbar-gauche">' +
-        signet() +
-        (retour ? '<button type="button" class="iconbtn" data-a="' + retour + '" aria-label="Retour">' + I('retour', 20) + '</button>' : '') +
-        '<div>' + (titre ? '<div class="topbar-titre">' + U.esc(titre) + '</div>' : marque()) +
-        (sous ? '<div class="topbar-sous">' + U.esc(sous) + '</div>' : '') + '</div>' +
-      '</div>' +
+      '<div class="topbar-gauche">' + gauche + '</div>' +
       (actionDroite || '<button type="button" class="iconbtn" data-a="menu" aria-label="Menu">' + I('menu', 20) + '</button>') +
       '</header>';
   }

@@ -109,15 +109,13 @@ h1, h2, h3, h4 { font-family: var(--font-heading); margin: 0; letter-spacing: -.
   box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 1px 12px rgba(31, 28, 69, .18);
 }
 .topbar-gauche { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
-/* rappel de marque « BFR » en tête des écrans de travail (logo complet sur
-   l'accueil) : discret, il ne prend pas la place du nom du chantier */
-.topbar-signet { display: block; height: 18px; width: auto; flex: 0 0 auto; opacity: .92; }
 .topbar-gauche > div { min-width: 0; /* permet le repli du sous-titre, sans deborder du bandeau */ }
 .topbar-titre { font-weight: 600; font-size: 16.5px; letter-spacing: -.015em; }
-/* Marque officielle BFR Systems (logo, variante fond foncé) : même encombrement
-   que le titre qu'elle remplace. Ne jamais recolorer ni déformer le logo :
-   object-fit garantit qu'il n'est pas écrasé si la place manque. */
-.topbar-marque { display: block; height: 22px; width: auto; max-width: 62vw; object-fit: contain; }
+/* Marque officielle BFR Systems (logo complet, variante « fond foncé ») : elle
+   ouvre tous les bandeaux, dans une seule forme. Ne jamais la recolorer, la
+   déformer ni la recadrer : la hauteur donne l'échelle, le rapport est conservé
+   (width: auto), et flex empêche l'écrasement si la place manque. */
+.topbar-marque { display: block; height: 20px; width: auto; flex: 0 0 auto; max-width: 62vw; object-fit: contain; }
 .topbar-sous { font-size: 11.5px; opacity: .72; white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; max-width: 100%; margin-top: 1px; }
 
@@ -383,10 +381,11 @@ button.carte, button.action-ligne, button.tache-ligne, button.jalon-ligne, butto
 }
 .feuille-fond.visible .feuille { transform: translateY(0); }
 .feuille.pleine { max-height: 96vh; }
-/* Très petits écrans (320 px) : la marque et le sous-titre se resserrent
-   d'un cran pour que l'intitulé des phases reste lisible en entier. */
-@media (max-width: 360px) {
-  .topbar-marque { height: 20px; }
+/* Téléphones étroits : la marque se resserre d'un cran pour que le titre de
+   l'écran — « J2 / 4 », le nom du chantier — reste lisible en entier à côté
+   d'elle et du bouton retour. */
+@media (max-width: 400px) {
+  .topbar-marque { height: 17px; }
   .topbar-sous { font-size: 11px; }
 }
 
@@ -470,7 +469,6 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
   .topbar { padding-top: calc(13px + env(safe-area-inset-top)); padding-bottom: 13px; }
   .topbar-titre { font-size: 18px; }
   .topbar-marque { height: 24px; }
-  .topbar-signet { height: 20px; }
   .topbar-sous { font-size: 12.5px; }
   .iconbtn { min-width: 42px; min-height: 42px; border-radius: 13px; }
   .contenu { padding-top: 20px; padding-bottom: 28px; }

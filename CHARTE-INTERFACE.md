@@ -20,22 +20,26 @@ Aucune teinte orange, ambre ou violette ne subsiste dans l'application, ni à l'
 
 ## 2. Marque officielle BFR Systems
 
-Le **logo officiel** figure dans le bandeau du haut, sous **deux formes** :
+Le **logo officiel** ouvre le bandeau du haut de **tous les écrans**, dans **une
+seule forme** : le logo complet « BFR SYSTEMS ».
 
-| Forme | Où | Hauteur |
-|---|---|---|
-| **Logo complet** « BFR SYSTEMS » | écran d'accueil, à la place du titre texte | 22 px (24 px au-delà de 620 px) |
-| **Marque « BFR »** seule | **tous les autres bandeaux** (chantier, journée, point du soir, réglages, nouveau chantier), avant la flèche de retour | 18 px (20 px au-delà de 620 px) |
+| Où | Hauteur |
+|---|---|
+| Tous les bandeaux : accueil, chantier, journée, point du soir, réglages, nouveau chantier | 20 px (17 px sous 400 px, 24 px au-delà de 620 px) |
 
-La marque complète ne tient pas sur les écrans de travail : à 22 px, elle mange la
-place du nom du chantier. D'où la marque courte, même source, recadrée avant le
-bloc « SYSTEMS ».
+- **Une seule forme, jamais recadrée.** Un « BFR » extrait du logo n'est pas le
+  logo BFR Systems : il a été essayé (marque courte en tête des écrans de
+  travail) puis **retiré le 7 octobre 2026**, sur retour d'usage. Le bandeau ne
+  porte donc **jamais deux marques** : le logo, puis le titre de l'écran.
+- **Place** : le logo vient en tête ; viennent ensuite, sur les écrans de
+  travail, la flèche de retour puis le titre (nom du chantier, « J2 / 4 »…) —
+  c'est lui qui se replie si la place manque, jamais la marque.
 
 - **Source** : `assets/logo-bfr-topbar.png` — fichier officiel repris **tel quel** du dépôt BFR-Report. C'est la variante « fond foncé » du logo (lettres blanches, bloc cyan `#06baf2`), prévue pour un fond bleu nuit ; la variante « fond clair » (lettres anthracite) ne s'emploie que sur fond blanc.
 - **Embarquée** dans l'application (`data:image/png;base64`) pour rester disponible **hors connexion** et dans le fichier unique de dépannage. Elle est produite par `outils/preparer-marque.py` → `app/src/marque-bfr.js` (recadrée, ×3, PNG-8 à 64 couleurs : 5 Ko).
-- **Hauteur** : 22 px sur téléphone, 24 px au-delà de 620 px, 20 px sous 360 px. La largeur suit, l'image n'est **jamais étirée** (`object-fit: contain`).
-- **Place** : l'accueil uniquement. Les écrans de travail (chantier, journée, point du soir, réglages) gardent leur **titre écrit** — le nom du chantier est plus utile au quotidien qu'un logo. La page `docs/diagnostic.html` porte aussi la marque.
-- **Intouchable** : jamais recolorée, jamais déformée, jamais détournée. Nom accessible « BFR Chantier ».
+- **Hauteur** : 20 px sur téléphone, 17 px sous 400 px, 24 px au-delà de 620 px. La largeur suit, l'image n'est **jamais étirée** (`object-fit: contain`), et le rapport officiel (8,70:1) est conservé.
+- **Sur l'accueil**, le logo remplace le titre : il est suivi de la ligne de métier « Installation · mise en route · accompagnement ». La page `docs/diagnostic.html` porte aussi la marque.
+- **Intouchable** : jamais recolorée, jamais déformée, jamais recadrée. Nom accessible « BFR Systems ».
 
 Mise à jour du logo : remplacer `assets/logo-bfr-topbar.png`, relancer `python3 outils/preparer-marque.py`, puis reconstruire. Le détail des règles est dans [`assets/README.md`](assets/README.md).
 
