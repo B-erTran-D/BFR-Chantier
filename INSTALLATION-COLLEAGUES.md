@@ -61,10 +61,12 @@ Puis **Menu → Réglages → Liste clients → Importer un CSV** : le fichier e
 
 | Symptôme | Que faire |
 |---|---|
-| L'application ne s'installe pas | Vérifiez que vous êtes bien dans **Chrome** (Android) ou **Safari** (iPhone) et que l'adresse est en `https://` |
+| L'application ne s'installe pas | Vérifiez que vous êtes bien dans **Chrome** (Android) ou **Safari** (iPhone) et que l'adresse est en `https://`. Ouvrez la page `/diagnostic.html` du site : elle affiche ce que le navigateur voit |
 | L'écran reste sur « Chargement… » | Fermez l'application, ouvrez-la avec du réseau (Wi-Fi) une première fois |
 | Le bouton Envoyer ne propose pas Gmail | Choisissez « Partager » puis Gmail dans la liste ; à défaut, enregistrez le PDF et joignez-le au message |
 | Rien ne s'affiche après une mise à jour | Rouvrez l'application avec du réseau une seconde fois (le cache se met à jour) |
+| **Chrome dit « application déjà installée »** alors qu'elle ne l'est pas | Les deux applications BFR (SAV et Chantier) sont publiées sous le même domaine : Chrome mélange parfois leurs installations. Ouvrez **https://&lt;compte&gt;.github.io/BFR-Chantier/diagnostic.html** sur le téléphone : la page dit ce que Chrome voit, et propose le bouton d'installation si l'invite est disponible. Sinon : menu **⋮** → *Ajouter à l'écran d'accueil*, ou installez depuis un autre navigateur (Edge, Samsung Internet) |
+| **Avant de désinstaller une application BFR** | Faites **Menu → Exporter la sauvegarde** dans *chaque* application : la désinstallation efface les données du téléphone (chantiers, clients, photos) |
 | Le mail s'ouvre sans destinataire | Les adresses ne sont pas encore saisies sur ce téléphone : Menu → Réglages → Responsables (§ 2) |
 | Une adresse est refusée | Vérifiez la forme (`vous@exemple.fr`) : l'application indique les adresses invalides en rouge |
 | Le téléphone a été changé | Installez l'application, puis Menu → Réglages → **Importer** le fichier de sauvegarde `.json` |

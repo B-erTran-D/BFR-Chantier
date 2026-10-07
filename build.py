@@ -23,6 +23,7 @@ import datetime
 import hashlib
 import json
 import os
+import re
 import shutil
 import struct
 import sys
@@ -63,6 +64,7 @@ MODULES = [
     ('ICONS', 'icons.js'),
     ('ANNOT', 'annotate.js'),
     ('LOGO', 'logo-bfr.js'),
+    ('MARQUE', 'marque-bfr.js'),
     ('UI', 'ui.js'),
     ('POINTSOIR', 'pointsoir.js'),
     ('ECRANS', 'ecrans.js'),
@@ -152,8 +154,25 @@ def lire(chemin):
         return f.read()
 
 
+def marque_du_bandeau():
+    """Le logo officiel BFR Systems, lu dans app/src/marque-bfr.js : source
+    unique de l'image (app/src/marque-bfr.js est produit par
+    outils/preparer-marque.py)."""
+    trouve = re.search(r"window\.MARQUE_BFR_TOPBAR\s*=\s*'([^']+)'",
+                       lire(os.path.join(SRC, 'marque-bfr.js')))
+    if not trouve:
+        raise SystemExit('Marque introuvable dans app/src/marque-bfr.js')
+    return trouve.group(1)
+
+
 def construire_single_file(avec_pwa=True):
     html = lire(os.path.join(APP, 'index.html'))
+    # le bandeau s'affiche avant l'exécution des scripts : la marque est posée ici
+    if '<!--LOGO-BANDEAU-->' not in html:
+        raise SystemExit('Marqueur introuvable dans app/index.html : LOGO-BANDEAU')
+    html = html.replace('<!--LOGO-BANDEAU-->',
+                        '<img class="topbar-marque" src="%s" alt="BFR Chantier" title="BFR Systems">'
+                        % marque_du_bandeau())
     html = html.replace('<style>/*<!--CSS-->*/</style>',
                         '<style>\n' + lire(os.path.join(SRC, 'style.css')) + '\n</style>')
     for marqueur, fichier in MODULES:
@@ -229,8 +248,14 @@ self.addEventListener('fetch', (e) => {
 });
 """
 
+# L'identifiant de l'application (id) est ce qui la distingue, sur le téléphone,
+# d'une autre application installée depuis le même domaine. Deux applications
+# publiées sous le même compte GitHub (…github.io/BFR-Report/ et
+# …github.io/BFR-Chantier/) partagent l'origine : l'identifiant doit donc être
+# explicite, en chemin absolu, et n'être jamais réutilisé pour une autre
+# application. Voir diagnostic.html et PUBLIER-SUR-GITHUB.md (§ 7).
 MANIFEST = {
-    "id": "bfr-chantier-v1",
+    "id": "/BFR-Chantier/",
     "name": "BFR Chantier — suivi des installations et formations",
     "short_name": "BFR Chantier",
     "description": "Suivi des journées de chantier, point du soir envoyé aux responsables, sessions de formation. Fonctionne hors connexion.",
@@ -271,6 +296,10 @@ def main():
         f.write(html_pwa)
 
     ecrire_icones(SITE)
+    # page de diagnostic de l'installation (à ouvrir sur le téléphone)
+    diag = os.path.join(APP, 'diagnostic.html')
+    if os.path.isfile(diag):
+        shutil.copyfile(diag, os.path.join(SITE, 'diagnostic.html'))
     for nom, contenu in (('sw.js', SW.replace('__VERSION__', version)), ):
         with open(os.path.join(SITE, nom), 'w', encoding='utf-8') as f:
             f.write(contenu)

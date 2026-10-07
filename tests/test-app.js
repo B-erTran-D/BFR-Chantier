@@ -86,7 +86,19 @@ function texteEcran() { return doc.getElementById('app').textContent.replace(/\s
   await attente(200);
 
   /* --- 1. l'écran d'accueil s'affiche (base vide) --- */
-  T('écran d\'accueil rendu', texteEcran().includes('BFR Chantier'));
+  T('écran d\'accueil rendu', texteEcran().includes('Installation'));
+  /* La marque officielle remplace le titre texte sur l'accueil : image
+     embarquée (donc disponible hors connexion) et identique à la constante
+     de l'application (garde-fou contre une image périmée à la construction). */
+  const marqueBandeau = doc.querySelector('.topbar-marque');
+  T('marque officielle BFR Systems dans le bandeau',
+    !!marqueBandeau && /^data:image\/png;base64,/.test(marqueBandeau.getAttribute('src')),
+    marqueBandeau ? String(marqueBandeau.getAttribute('src')).slice(0, 22) : 'absente');
+  T('marque du bandeau identique à la constante de l\'application',
+    !!marqueBandeau && marqueBandeau.getAttribute('src') === dom.window.MARQUE_BFR_TOPBAR);
+  T('marque accessible (nom de l\'application annoncé)',
+    !!marqueBandeau && marqueBandeau.getAttribute('alt') === 'BFR Chantier');
+  T('plus de titre texte sur l\'accueil', !doc.querySelector('.topbar-titre'));
   T('invite à créer le premier chantier', texteEcran().includes('Aucun chantier enregistré'));
   T('les outils sont chargés', !!(dom.window.Modele && dom.window.Store && dom.window.PointSoir && dom.window.App));
   T('le module de mémoire d\'usage est chargé', typeof dom.window.Usage === 'object');
@@ -116,6 +128,10 @@ function texteEcran() { return doc.getElementById('app').textContent.replace(/\s
   T('13 jalons créés', !!ch && ch.jalons.length === 13);
   T('avancement initial 0 %', App.avancementDe(ch) === 0);
   T('écran fiche chantier', texteEcran().includes('Jalons'));
+  const titreFiche = doc.querySelector('.topbar-titre');
+  T('fiche chantier : le bandeau garde le titre du chantier, pas le logo',
+    !doc.querySelector('.topbar-marque') && !!titreFiche && titreFiche.textContent.indexOf('Ligne 3') === 0,
+    titreFiche ? titreFiche.textContent.slice(0, 30) : 'aucun titre');
 
   /* --- 3. démarrage de la journée --- */
   clic('[data-a="demarrer-journee"]');
@@ -701,7 +717,33 @@ function texteEcran() { return doc.getElementById('app').textContent.replace(/\s
       } catch (e) { return false; }
     })());
 
-  /* --- 26. aucune erreur d'exécution --- */
+  /* --- 26. mise en page : une seule largeur pour toute l'interface --- */
+  /* Le bandeau, le contenu et la barre du bas doivent partager la meme colonne :
+     un bandeau reduit a son contenu (marges automatiques dans un conteneur flex)
+     etait le defaut constate sur grand ecran. */
+  const feuilleCSS = [...doc.querySelectorAll('style')].map((s2) => s2.textContent).join('\n');
+  T('largeur de reference declaree (une seule valeur hors grands ecrans)',
+    (feuilleCSS.match(/--app-largeur\s*:/g) || []).length === 2);
+  T('contenu borne a la colonne',
+    /\.contenu\s*\{[^}]*max-width:\s*var\(--app-largeur\)/.test(feuilleCSS));
+  T('bandeau aligne sur la colonne par son remplissage',
+    /\.topbar\s*\{[^}]*padding:\s*11px var\(--retrait\)/.test(feuilleCSS));
+  T('barre du bas alignee sur la colonne',
+    /\.barre-bas\s*\{[^}]*padding:\s*10px var\(--retrait\)/.test(feuilleCSS));
+  T('onglets alignes sur la colonne',
+    /\.onglets\s*\{[^}]*padding:\s*0 var\(--retrait\)/.test(feuilleCSS));
+  T('feuilles contenues dans la colonne',
+    /\.feuille\s*\{[^}]*max-width:\s*var\(--app-largeur\)/.test(feuilleCSS));
+  T('marque dimensionnee par la charte (22 px, non deformee)',
+    /\.topbar-marque\s*\{[^}]*height:\s*22px[^}]*object-fit:\s*contain/.test(feuilleCSS));
+  T('sous-titre du bandeau non limite a une fraction de la largeur',
+    !/\.topbar-sous\s*\{[^}]*max-width:\s*\d+vw/.test(feuilleCSS));
+  T('marque resserree sur tres petits ecrans',
+    /@media \(max-width: 360px\) \{[^}]*\.topbar-marque\s*\{[^}]*height:\s*20px/.test(feuilleCSS));
+  T('aucune largeur figee en pixels pour les barres',
+    !/\.(topbar|barre-bas|onglets)\s*\{[^}]*max-width:\s*\d+px/.test(feuilleCSS));
+
+  /* --- 27. aucune erreur d'exécution --- */
   T('aucune erreur d\'exécution', erreurs.length === 0, erreurs.slice(0, 3).join(' | '));
 
   console.log('\n' + '='.repeat(60));

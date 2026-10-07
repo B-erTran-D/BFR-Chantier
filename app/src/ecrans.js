@@ -33,11 +33,22 @@
     return pastille(gr.court, gr.couleur, gr.fond);
   }
 
+  /* Marque officielle BFR Systems : le logo remplace le titre texte sur
+     l'accueil (var. « fond foncé » du logo, prévue pour le bandeau bleu nuit).
+     Les écrans de travail gardent leur titre écrit — nom du chantier, réglages…,
+     plus utile au quotidien qu'un logo. Repli sur le titre si le module de
+     marque n'a pas été chargé (fichier de dépannage incomplet). */
+  function marque() {
+    var logo = global.MARQUE_BFR_TOPBAR;
+    if (!logo) { return '<div class="topbar-titre">BFR Chantier</div>'; }
+    return '<img class="topbar-marque" src="' + logo + '" alt="BFR Chantier" title="BFR Systems">';
+  }
+
   function entete(titre, sous, retour, actionDroite) {
     return '<header class="topbar">' +
       '<div class="topbar-gauche">' +
         (retour ? '<button type="button" class="iconbtn" data-a="' + retour + '" aria-label="Retour">' + I('retour', 20) + '</button>' : '') +
-        '<div><div class="topbar-titre">' + U.esc(titre) + '</div>' +
+        '<div>' + (titre ? '<div class="topbar-titre">' + U.esc(titre) + '</div>' : marque()) +
         (sous ? '<div class="topbar-sous">' + U.esc(sous) + '</div>' : '') + '</div>' +
       '</div>' +
       (actionDroite || '<button type="button" class="iconbtn" data-a="menu" aria-label="Menu">' + I('menu', 20) + '</button>') +
@@ -58,7 +69,7 @@
     var prevus = etat.chantiers.filter(function (c) { return c.statut === 'PREVU'; });
     var clotures = etat.chantiers.filter(function (c) { return c.statut === 'CLOTURE' || c.statut === 'RECEPTIONNE'; });
 
-    var html = entete('BFR Chantier', 'Installation · mise en service · formation', null);
+    var html = entete(null, 'Installation · mise en route · accompagnement', null);
 
     /* alertes : journées non clôturées */
     var alertes = [];

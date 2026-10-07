@@ -249,6 +249,14 @@ async function ecrans() {
   await page.screenshot({ path: path.join(OUT, 'point-du-soir-pdf.png') });
   console.log('  aperçu du PDF');
 
+  /* ---------- grands écrans : la même application, en colonne centrée ------ */
+  await page.setViewport({ width: 900, height: 1000, deviceScaleFactor: 1 });
+  await page.evaluate(() => window.App.aller('accueil'));
+  await new Promise((r) => setTimeout(r, 800));
+  await page.screenshot({ path: path.join(OUT, 'ecran-grand-ecran.png') });
+  console.log('  écran grand écran (tablette / ordinateur)');
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
+
   console.log('  erreurs d\'exécution :', erreurs.length ? erreurs.join(' | ') : 'aucune');
   await navigateur.close();
   if (erreurs.length) process.exitCode = 1;

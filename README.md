@@ -32,10 +32,15 @@ python3 tests/verifier-publication.py  # seulement le contrôle des données nom
 ### Tests et captures d'écran
 
 ```bash
-sh tests/run.sh                        # build + tests du modèle + test de fumée + contrôle
+sh tests/run.sh                        # build + tests du modèle + test de fumée + contrôles
 npm i jsdom fake-indexeddb             # nécessaire au seul test de fumée (DOM simulé)
 node outils/apercus.js                 # régénère apercus/ (nécessite puppeteer, optionnel)
 ```
+
+Le site publié contient une page de diagnostic à ouvrir sur un téléphone :
+`https://<compte>.github.io/BFR-Chantier/diagnostic.html` — elle dit ce que le
+navigateur voit (mode d'affichage, identifiant de l'application, invite
+d'installation, service worker) et sert à comprendre un refus d'installation.
 
 Les tests et les captures ne contiennent **que des données fictives** (« Client
 Exemple », adresses en `@exemple.fr`) : c'est ce qui permet de publier les
@@ -52,8 +57,8 @@ captures dans le dépôt.
 | **[`INSTALLATION-COLLEAGUES.md`](INSTALLATION-COLLEAGUES.md)** | Installation sur un téléphone, réglages initiaux, dépannage |
 | **[`docs/01-DOSSIER-CONCEPTION.md`](docs/01-DOSSIER-CONCEPTION.md)** | Le dossier de conception complet : contexte, périmètre, rôles, modèle fonctionnel, écrans, point du soir, documents, réutilisation du code existant, architecture, lots de développement |
 | **[`docs/02-MAQUETTES.html`](docs/02-MAQUETTES.html)** | Les maquettes d'écrans et les aperçus de PDF (document à montrer aux responsables) |
-| **[`CHARTE-INTERFACE.md`](CHARTE-INTERFACE.md)** | La charte appliquée à l'interface : couleurs BFR, icônes monochromes et duotones, typographie, comportements |
-| **[`apercus/`](apercus/)** | Captures réelles de l'application (accueil, création avec les phases, journée, point du soir, fiche chantier, réglages, menu) et la planche des 67 icônes — toutes générées avec des **données de démonstration neutres** |
+| **[`CHARTE-INTERFACE.md`](CHARTE-INTERFACE.md)** | La charte appliquée à l'interface : couleurs BFR, marque officielle, icônes monochromes et duotones, typographie, mise en page, comportements |
+| **[`apercus/`](apercus/)** | Captures réelles de l'application (accueil sur téléphone **et sur grand écran**, création avec les phases, journée, point du soir, fiche chantier, réglages, menu) et la planche des 67 icônes — toutes générées avec des **données de démonstration neutres** |
 | `PUBLIER-SUR-GITHUB.md` *(conservé hors du dépôt public)* | Préparer, publier et mettre à jour la version GitHub Pages |
 
 ## Ce qui fonctionne aujourd'hui (lots L0 à L3)
@@ -109,6 +114,7 @@ Les formations dispensées aux équipes client sont tracées de la même façon 
 
 ```
 BFR-Chantier/
+├── assets/                   logo officiel BFR Systems (source) + règles d'usage
 ├── app/
 │   ├── index.html            gabarit (marqueurs d'assemblage du build)
 │   └── src/
@@ -118,7 +124,8 @@ BFR-Chantier/
 │       ├── store.js          base locale IndexedDB, réglages, sauvegarde
 │       ├── usage.js          mémoire d'usage (les saisies les plus fréquentes par utilisateur)
 │       ├── pdf.js            moteur PDF maison (repris de BFR-Report)
-│       ├── logo-bfr.js       logo embarqué
+│       ├── logo-bfr.js       logo embarqué (en-tête des rapports PDF)
+│       ├── marque-bfr.js     marque officielle du bandeau (produite par outils/preparer-marque.py)
 │       ├── annotate.js       annotation de photo au doigt (repris)
 │       ├── pointsoir.js      mise en page du point du soir + textes du mail
 │       ├── ui.js             composants d'interface (feuilles, champs, confirmations)
@@ -127,7 +134,7 @@ BFR-Chantier/
 ├── docs/                     site publié (GitHub Pages) + dossier de conception et maquettes
 ├── apercus/                  captures d'écran et planche d'icônes
 ├── tests/                    test-modele.js · test-app.js · verifier-publication.py · run.sh
-├── outils/                   outil interne : génération des captures (données fictives)
+├── outils/                   captures d'écran (données fictives) · préparation de la marque officielle
 ├── BFR-Chantier.html         application complète en 1 fichier (dépannage)
 ├── build.py                  assemble le fichier unique et docs/
 └── preparer-depot-public.py  contrôle et assemble depot-public/ (dépôt GitHub)

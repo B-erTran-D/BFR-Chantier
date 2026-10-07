@@ -78,19 +78,45 @@ h1, h2, h3, h4 { font-family: var(--font-heading); margin: 0; letter-spacing: -.
 
 /* ------------------------------- structure --------------------------- */
 
+/* ------------------------------------------------------------------------
+   Largeur de l'application
+   ------------------------------------------------------------------------
+   Une seule largeur de référence pour toute l'interface : le bandeau du haut,
+   le menu général, le contenu et la barre du bas s'alignent dessus. Sur le
+   téléphone (moins de 620 px), l'application occupe toute la largeur ; au-delà,
+   elle se cale sur une colonne centrée, et les barres gardent un fond pleine
+   largeur — comme les applications iOS sur iPad ou sur ordinateur.
+   ------------------------------------------------------------------------ */
+:root {
+  --app-largeur: 760px;      /* largeur de la colonne de contenu */
+  --app-marge: 16px;         /* marge intérieure, sur téléphone */
+  /* Retrait réel entre le bord de l'écran et le contenu : il vaut --app-marge,
+     et s'élargit tout seul dès que la fenêtre dépasse --app-largeur. Les barres
+     (bandeau, onglets, barre du bas) gardent ainsi un fond pleine largeur tout
+     en alignant leur contenu sur la colonne — comme sur iPad ou ordinateur. */
+  --retrait: max(var(--app-marge), calc((100% - var(--app-largeur)) / 2 + var(--app-marge)));
+}
+
 #app { display: flex; flex-direction: column; min-height: 100vh; padding-bottom: 84px; }
 
 .topbar {
   position: sticky; top: 0; z-index: 40;
+  width: 100%;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 11px 16px; padding-top: calc(11px + env(safe-area-inset-top));
+  padding: 11px var(--retrait); padding-top: calc(11px + env(safe-area-inset-top));
   background: linear-gradient(115deg, var(--bfr-secondary) 0%, var(--bfr-secondary-dark) 92%);
   color: #fff;
   box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 1px 12px rgba(31, 28, 69, .18);
 }
-.topbar-gauche { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.topbar-gauche { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.topbar-gauche > div { min-width: 0; /* permet le repli du sous-titre, sans deborder du bandeau */ }
 .topbar-titre { font-weight: 600; font-size: 16.5px; letter-spacing: -.015em; }
-.topbar-sous { font-size: 11.5px; opacity: .72; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60vw; margin-top: 1px; }
+/* Marque officielle BFR Systems (logo, variante fond foncé) : même encombrement
+   que le titre qu'elle remplace. Ne jamais recolorer ni déformer le logo :
+   object-fit garantit qu'il n'est pas écrasé si la place manque. */
+.topbar-marque { display: block; height: 22px; width: auto; max-width: 62vw; object-fit: contain; }
+.topbar-sous { font-size: 11.5px; opacity: .72; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 100%; margin-top: 1px; }
 
 .iconbtn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -100,12 +126,15 @@ h1, h2, h3, h4 { font-family: var(--font-heading); margin: 0; letter-spacing: -.
 }
 .iconbtn:active { background: rgba(255, 255, 255, .24); }
 
-.contenu { flex: 1; padding: 16px 16px 24px; }
+.contenu {
+  flex: 1; width: 100%; max-width: var(--app-largeur); margin-left: auto; margin-right: auto;
+  padding: 16px var(--app-marge) 24px;
+}
 
 .barre-bas {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
   display: flex; gap: 9px; align-items: center;
-  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  padding: 10px var(--retrait) calc(10px + env(safe-area-inset-bottom));
   background: rgba(255, 255, 255, .94);
   border-top: 1px solid var(--bfr-border-light);
   box-shadow: var(--ombre-haute);
@@ -273,7 +302,7 @@ button.carte, button.action-ligne, button.tache-ligne, button.jalon-ligne, butto
 
 /* ------------------------------- onglets ----------------------------- */
 
-.onglets { display: flex; gap: 2px; overflow-x: auto; background: #fff; border-bottom: 1px solid var(--bfr-border-light); padding: 0 10px; scrollbar-width: none; }
+.onglets { display: flex; gap: 2px; overflow-x: auto; background: #fff; border-bottom: 1px solid var(--bfr-border-light); padding: 0 var(--retrait); scrollbar-width: none; }
 .onglets::-webkit-scrollbar { display: none; }
 .onglet {
   font-family: var(--font-heading); font-size: 12.5px; font-weight: 600; color: var(--bfr-muted);
@@ -303,17 +332,28 @@ button.carte, button.action-ligne, button.tache-ligne, button.jalon-ligne, butto
 
 .feuille-fond {
   position: fixed; inset: 0; z-index: 100; background: rgba(23, 21, 51, .48);
-  display: flex; align-items: flex-end; opacity: 0; transition: opacity .18s ease;
+  display: flex; align-items: flex-end; justify-content: center; opacity: 0; transition: opacity .18s ease;
   backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
 }
 .feuille-fond.visible { opacity: 1; }
 .feuille {
-  width: 100%; max-height: 92vh; background: #fff; border-radius: 20px 20px 0 0;
+  width: 100%; max-width: var(--app-largeur); max-height: 92vh; background: #fff; border-radius: 20px 20px 0 0;
   display: flex; flex-direction: column; transform: translateY(16px); transition: transform .2s ease;
   padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -8px 32px rgba(31, 28, 69, .2);
 }
 .feuille-fond.visible .feuille { transform: translateY(0); }
 .feuille.pleine { max-height: 96vh; }
+/* Très petits écrans (320 px) : la marque et le sous-titre se resserrent
+   d'un cran pour que l'intitulé des phases reste lisible en entier. */
+@media (max-width: 360px) {
+  .topbar-marque { height: 20px; }
+  .topbar-sous { font-size: 11px; }
+}
+
+@media (min-width: 620px) {
+  /* au-delà du téléphone, la feuille est centrée et arrondie en bas aussi */
+  .feuille { margin-bottom: 18px; border-radius: 20px; box-shadow: 0 18px 48px rgba(31, 28, 69, .3); }
+}
 .feuille-tete { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 12px; border-bottom: 1px solid var(--bfr-border-light); }
 .feuille-tete h3 { font-size: 17px; font-weight: 600; color: var(--bfr-secondary); letter-spacing: -.015em; }
 .feuille-tete .iconbtn { background: var(--bfr-bg); color: var(--bfr-muted); }
@@ -347,7 +387,7 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
 #toast { position: fixed; left: 0; right: 0; bottom: 96px; z-index: 200; pointer-events: none; text-align: center; opacity: 0; transition: opacity .2s ease; }
 #toast.visible { opacity: 1; }
 .toast {
-  display: inline-block; max-width: 86vw; background: var(--bfr-secondary-dark); color: #fff;
+  display: inline-block; max-width: min(86vw, var(--app-largeur)); background: var(--bfr-secondary-dark); color: #fff;
   border-radius: 999px; padding: 11px 19px; font-size: 13.5px; font-weight: 600;
   box-shadow: 0 8px 22px rgba(15, 23, 42, .28);
 }
@@ -382,9 +422,24 @@ canvas.apercu-page { width: 100%; max-width: 520px; height: auto; border: 1px so
 .annot-couleur { width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .45); cursor: pointer; padding: 0; }
 .annot-couleur.actif { border-color: #fff; transform: scale(1.12); }
 
+/* ------------------------- grands écrans (tablette, ordinateur) --------
+   L'application garde sa colonne, mais respire : bandeau un peu plus haut,
+   titre un peu plus grand, contenu aligné sur la même largeur. */
 @media (min-width: 620px) {
-  .contenu, .topbar, .barre-bas, .onglets { max-width: 620px; margin-left: auto; margin-right: auto; }
-  .barre-bas { max-width: 620px; border-radius: 16px 16px 0 0; }
+  :root { --app-marge: 22px; }
+  .topbar { padding-top: calc(13px + env(safe-area-inset-top)); padding-bottom: 13px; }
+  .topbar-titre { font-size: 18px; }
+  .topbar-marque { height: 24px; }
+  .topbar-sous { font-size: 12.5px; }
+  .iconbtn { min-width: 42px; min-height: 42px; border-radius: 13px; }
+  .contenu { padding-top: 20px; padding-bottom: 28px; }
+  .barre-bas { padding-top: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .onglet { padding: 13px 12px; font-size: 13px; }
+  .gros-bouton, .carte { padding-left: 16px; padding-right: 16px; }
+}
+
+@media (min-width: 1080px) {
+  :root { --app-largeur: 880px; }
 }
 
 /* ---------------------------- mémoire d'usage ------------------------- */

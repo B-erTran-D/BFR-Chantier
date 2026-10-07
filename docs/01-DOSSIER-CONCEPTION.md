@@ -126,7 +126,7 @@ L'application n'a **ni compte ni mot de passe** : chaque téléphone est autonom
 
 ### 3.1 bis Charte graphique de l'interface
 
-L'application applique la charte BFR Systems **sans exception** : cyan `#06baf2`, bleu nuit `#332e72`, encre `#1f1c45`, bleu ardoise `#4a4f6b` pour ce qui doit être surveillé, rouge sourd uniquement pour le danger. **Aucune couleur hors charte** (pas d'orange, pas de violet). Les vignettes ne sont pas des émojis mais des **icônes vectorielles** dessinées sur une grille de 24 px, en deux déclinaisons — **monochrome** (listes, champs, boutons) et **duotone** (en-têtes de carte, pastilles d'état). Le détail figure dans `CHARTE-INTERFACE.md`, avec la planche d'icônes et les captures d'écran (`apercus/`).
+L'application applique la charte BFR Systems **sans exception** : cyan `#06baf2`, bleu nuit `#332e72`, encre `#1f1c45`, bleu ardoise `#4a4f6b` pour ce qui doit être surveillé, rouge sourd uniquement pour le danger. **Aucune couleur hors charte** (pas d'orange, pas de violet). Les vignettes ne sont pas des émojis mais des **icônes vectorielles** dessinées sur une grille de 24 px, en deux déclinaisons — **monochrome** (listes, champs, boutons) et **duotone** (en-têtes de carte, pastilles d'état). Le détail figure dans `CHARTE-INTERFACE.md`, avec la planche d'icônes et les captures d'écran (`apercus/`). Le **logo officiel BFR Systems** (fichier `assets/logo-bfr-topbar.png`, repris tel quel du dépôt BFR-Report) est embarqué dans l'application et s'affiche dans le bandeau du haut de l'écran d'accueil, à la place du titre texte ; les écrans de travail conservent leur titre écrit (nom du chantier, journée, réglages…).
 
 ### 3.2 Les destinataires du point du soir
 
